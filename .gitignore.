@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+*.pem
+*.crt
+*.key
+__pycache__/
+*.pyc
+venv/
+.venv/
