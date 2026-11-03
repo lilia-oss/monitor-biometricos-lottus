@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
-<title>Monitor Lottus · Asistencia y seguimiento fotos · v6 30 Oct</title>
+<title>Monitor Lottus · Asistencia y seguimiento fotos · v7.2 alcance</title>
 <link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <script>
 /* v4 · Arranque sin parpadeo: si hay una sesión guardada, se oculta el acceso y la interfaz mientras se valida.
@@ -1294,7 +1294,7 @@ async function verificarGeneralRango(){
   const [rango, reciente, dia, hb] = await Promise.all([
     sb.from('monitor_lecturas_hora').select('fecha',{count:'exact',head:true}).gte('fecha',d).lte('fecha',h),
     sb.from('monitor_lecturas_hora').select('fecha,hora').order('fecha',{ascending:false}).limit(1),
-    sb.from('monitor_lecturas_dia').select('fecha').order('fecha',{ascending:false}).limit(1),
+    consultaUltimaLecturaDia('fecha'),
     Promise.resolve(estadoFuentes.lecturas||{})
   ]);
   if(rango.error)lineas.push('Detalle horario / rango: ERROR — '+rango.error.message);
@@ -1380,7 +1380,7 @@ async function leerLibro(file){
   const head = new TextDecoder('latin1').decode(buf.slice(0, 200)).trim().toLowerCase();
   if (head.startsWith('<')) {                       // .xls de Salesforce = tabla HTML en ISO-8859-1
     let txt = new TextDecoder('utf-8', {fatal:false}).decode(buf);
-    if (/charset=iso-8859-1|charset=windows-1252/i.test(txt.slice(0,500)) || txt.includes('�'))
+    if (/charset=iso-8859-1|charset=windows-1252/i.test(txt.slice(0,500)) || txt.includes(' '))
       txt = new TextDecoder('windows-1252').decode(buf);
     return XLSX.read(txt, {type:'string', raw:true});
   }
@@ -1827,8 +1827,7 @@ async function cargarFiltros(){
   if (fs.length) $('#gFecha').min = fs[0];
   // Fuente de verdad para fecha máxima: última matrícula/día realmente sincronizada de HikCentral.
   // No limitar la fecha máxima a fn_filtros, que puede cerrar el corte en ayer.
-  const {data:ultima,error:fechaError} = await sb.from('monitor_lecturas_dia')
-    .select('fecha').order('fecha',{ascending:false}).limit(1);
+  const {data:ultima,error:fechaError} = await consultaUltimaLecturaDia('fecha');
   if (fechaError) throw Error('No fue posible consultar la fecha real de HikCentral: '+fechaError.message);
   const fechaHik = ultima?.[0]?.fecha ? String(ultima[0].fecha).slice(0,10) : '';
   if (!fechaHik) throw Error('No hay fechas disponibles en monitor_lecturas_dia para determinar el corte.');
@@ -1844,7 +1843,7 @@ async function cargarFiltros(){
 }
 
 async function actualizarFechaHik(){
- const {data,error}=await sb.from('monitor_lecturas_dia').select('fecha').order('fecha',{ascending:false}).limit(1);
+ const {data,error}=await consultaUltimaLecturaDia('fecha');
  if(error)throw error;
  const f=data?.[0]?.fecha ? String(data[0].fecha).slice(0,10) : '';
  if(f && (!fechaMax || f>fechaMax)){
@@ -1980,7 +1979,9 @@ async function buscarPasos_(){
   let data, error; try { data = await rpc('fn_pasos_matricula', { p_matriculas: mats, p_fecha: G.fecha(), p_historico: G.acu() }); } catch(e){ error = e; }
   if (error){ $('#pModo').innerHTML = `<span class="err">${esc(error.message)}</span>`; return; }
   pUltimo = data; $('#pXlsx').disabled = false;
+  const fueraAlcance = Number(data.fuera_alcance || 0);
   $('#pModo').innerHTML = data.historico ? `<b>Acumulado:</b> todos los días hasta el <b>${data.corte}</b>.` : `<b>Corte del día:</b> solo el <b>${data.corte}</b>.`;
+  if (fueraAlcance) $('#pModo').innerHTML += ` · <span class="muted">${fmt(fueraAlcance)} matrícula(s) fuera de tu alcance no se muestran.</span>`;
   const M = data.matriculas; $('#pN').textContent = `· ${fmt(M.length)} matrículas`;
   const estado = r => estadoTxt(r) === 'NI nueva asistencia' ? '<span class="tag no">NI nueva asistencia</span>'
     : estadoTxt(r) === 'Alumno de nuevo ingreso' ? '<span class="tag si">Alumno de nuevo ingreso</span>' : '<span class="tag na">Alumno de Reingreso</span>';
@@ -2181,7 +2182,7 @@ async function cargarFotografias_(){
    const {data:{session}}=await sb.auth.getSession();
    if(session){
      // El sincronizador local publica un único corte agregado por sección.
-     const {data:corte,error}=await sb.from('monitor_cortes')
+     const {data:corte,error}=alcanceRestringido()?await cortesAlcance(['fotografias'],true):await sb.from('monitor_cortes')
        .select('datos,actualizado_en').eq('seccion','fotografias').single();
      if(error) throw error;
      const porMarca=corte?.datos?.por_marca;
@@ -2386,7 +2387,7 @@ async function cargarSalud_(){
   if(!saludDatos) $('#saludUltimo').innerHTML='<span class="spin"></span>Consultando el último corte de dispositivos…';
   try {
     // v4: resumen por área y diagnóstico individual en una sola lectura de monitor_cortes.
-    const {data:filasCorte,error}=await sb.from('monitor_cortes')
+    const {data:filasCorte,error}=alcanceRestringido()?await cortesAlcance(['dispositivos','dispositivos_detalle'],false):await sb.from('monitor_cortes')
       .select('seccion,datos,actualizado_en').in('seccion',['dispositivos','dispositivos_detalle']);
     if(error) throw error;
     const data=(filasCorte||[]).find(r=>r.seccion==='dispositivos');
@@ -2754,6 +2755,8 @@ async function monitorAuthorize(){
     if(!row?.autorizado){await sb.auth.signOut();gateMsg('Usuario sin autorización para este monitor.');return;}
     monitorRole=row.rol||'consulta';
     window.__lottusUid=who.user.id||'';window.__lottusAcceso=huellaAcceso(row);
+    // Alcance autorizado (rol + marcas/planteles de monitor_alcances) antes de mostrar o consultar datos.
+    if(!(await cargarAlcance())){await sb.auth.signOut();return;}
     $('#accessGate').classList.add('hidden');
     document.body.classList.remove('monitor-locked');
     $('#globalSession').classList.remove('hidden');
@@ -2774,6 +2777,7 @@ async function monitorAuthorize(){
       const hv=location.hash.replace('#','');if(['gen','ni','salud','fotos','bus','reportes','corp'].includes(hv))inicio=hv;
       if(!['gen','ni','salud','fotos','bus','reportes','corp'].includes(inicio))inicio='gen';
       // v4: filtros de la sesión restaurados antes de la primera consulta y de mostrar la interfaz.
+      alcanceInstalar();   // filtros limitados al alcance antes de restaurar filtros y de la primera consulta
       if(typeof estadoRestaurar==='function')estadoRestaurar();
       show(inicio);
       // v5: la fecha de corte se conoce desde el inicio en cualquier pestaña (no solo en General).
@@ -3141,8 +3145,8 @@ const esPermiso = e => /permission|denied|42501|not allowed|rls/i.test(String(e?
 async function consultarFuentes(){
   const seguro = q => q.then(r => r, e => ({ error:e }));
   const [c, l, s] = await Promise.all([
-    seguro(sb.from('monitor_cortes').select('seccion,actualizado_en')),
-    seguro(sb.from('monitor_lecturas_dia').select('fecha,ultima_lectura').order('fecha',{ascending:false}).limit(1)),
+    seguro(alcanceRestringido()?sb.rpc('monitor_cortes_estado').then(({data,error})=>({data:Array.isArray(data)?data:[],error})):sb.from('monitor_cortes').select('seccion,actualizado_en')),
+    seguro(consultaUltimaLecturaDia('fecha,ultima_lectura')),
     seguro(sb.from('asistencia_2026').select('cargado_en').order('cargado_en',{ascending:false}).limit(1))
   ]);
   const nuevo = {}, cortes = {};
@@ -3383,7 +3387,7 @@ function v2Busqueda(mats, data){
       let acumuladas=0;
       const partes=await enParalelo(ds,3,async dia=>{
         let r;
-        try{ r=await detalleHoraCompartido(dia,'',''); }
+        try{ r=await detalleAlcanceDia(dia); }
         catch(e){ throw Error('No se pudieron consultar las lecturas del '+dia+': '+String(e.message||e).replace(/^Lecturas horarias: /,'')); }
         if(!r.completo)throw Error('Demasiadas filas el '+dia+'. No se exportarán datos incompletos.');
         acumuladas+=r.registros.length;
@@ -3817,7 +3821,9 @@ async function v4VerificarAcceso(){
     const { data, error } = await sb.rpc('monitor_mi_acceso'); if (error) return;
     const row = Array.isArray(data) ? data[0] : data;
     if (!row?.autorizado){ await sb.auth.signOut(); return; }
-    if (huellaAcceso(row) !== window.__lottusAcceso){ limpiarEstadoLocal(); location.reload(); }
+    if (huellaAcceso(row) !== window.__lottusAcceso){ limpiarEstadoLocal(); location.reload(); return; }
+    const { data:alc } = await sb.rpc('monitor_mi_alcance');
+    if (alc && huellaAlcance(alc) !== window.__lottusAlcance){ limpiarEstadoLocal(); location.reload(); }
   } catch(e){}
 }
 setInterval(v4VerificarAcceso, 10 * 60e3);
@@ -3825,6 +3831,181 @@ setInterval(v4VerificarAcceso, 10 * 60e3);
 function v6PeriodoOtra(){ if (vista === 'gen') return; const f = fechaCorteSinRango(); $('#gPeriodo').innerHTML = f ? (acumulado ? `Acumulado hasta el <b>${fFecha(f)}</b>` : `Corte del día <b>${fFecha(f)}</b>`) : ''; }
 ['gAcu','gUltimo'].forEach(id => document.getElementById(id)?.addEventListener('click', () => setTimeout(v6PeriodoOtra, 700)));
 document.getElementById('gFecha')?.addEventListener('change', () => setTimeout(v6PeriodoOtra, 0));
+</script>
+<script>
+/* ===================== Alcance autorizado por usuario (fuente única de verdad) =====================
+   Se lee una sola vez al iniciar sesión con monitor_mi_alcance() (rol + monitor_alcances por UUID de la sesión).
+   · Corporativo (administración y consulta corporativa): no se instala nada; el monitor funciona igual que antes.
+   · Restringido: los filtros de marca y plantel existentes solo admiten valores autorizados y se preseleccionan.
+   La autorización real está en Supabase (funciones, políticas y vistas); esto solo alinea la interfaz. */
+let ALCANCE = null;
+const alcNorm = v => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, ' ');
+const alcanceRestringido = () => !!(ALCANCE && !ALCANCE.irrestricto);
+const huellaAlcance = a => JSON.stringify([!!a?.irrestricto, (a?.alcances || []).map(x => [x.marca, x.plantel])]);
+
+async function cargarAlcance(){
+  const { data, error } = await sb.rpc('monitor_mi_alcance');
+  if (error || !data){
+    // Sin la función de alcance solo la administración puede continuar; nadie más ve datos sin límite.
+    if (monitorRole === 'administrador'){ ALCANCE = { irrestricto:true, alcances:[], marcas:new Map() }; window.__lottusAlcance = huellaAlcance(ALCANCE); return true; }
+    gateMsg('No se pudo comprobar tu alcance autorizado. Intenta de nuevo o contacta a administración.' + (error ? ' (' + (error.message || error) + ')' : ''));
+    return false;
+  }
+  const marcas = new Map();
+  for (const a of data.alcances || []){
+    const mk = alcNorm(a.marca); if (!mk) continue;
+    const e = marcas.get(mk) || { marca:String(a.marca).trim(), toda:false, planteles:new Map() };
+    if (String(a.plantel || '').trim() === '__TODA_LA_MARCA__') e.toda = true;
+    else if (alcNorm(a.plantel)) e.planteles.set(alcNorm(a.plantel), String(a.plantel).trim());
+    marcas.set(mk, e);
+  }
+  ALCANCE = { irrestricto:!!data.irrestricto, rol:data.rol, alcances:data.alcances || [], marcas };
+  window.__lottusAlcance = huellaAlcance(data);
+  if (!ALCANCE.irrestricto && marcas.size) await alcanceAlinearNombres();
+  if (!ALCANCE.irrestricto && !marcas.size){
+    gateMsg('Tu usuario no tiene planteles asignados en el monitor. Solicita a administración que registre tu alcance.');
+    return false;
+  }
+  return true;
+}
+
+// Las consultas originales comparan marca y plantel letra por letra. Si monitor_alcances dice «REYNOSA» y los
+// datos dicen «Reynosa», no encuentran nada. Se toma la escritura real de las lecturas que el usuario ya puede ver
+// (Supabase solo le devuelve las de su alcance) y se usa esa en los filtros.
+async function alcanceAlinearNombres(){
+  try {
+    const { data, error } = await sb.from('monitor_lecturas_hora').select('marca,plantel')
+      .order('fecha', { ascending:false }).limit(1000);
+    if (error || !Array.isArray(data)) return;
+    for (const r of data){
+      const e = ALCANCE.marcas.get(alcNorm(r.marca)); if (!e) continue;
+      if (r.marca && e.marca !== String(r.marca).trim()) e.marca = String(r.marca).trim();
+      const kp = alcNorm(r.plantel);
+      if (kp && e.planteles.has(kp)) e.planteles.set(kp, String(r.plantel).trim());
+    }
+  } catch(e){ console.warn('No se pudo alinear la escritura de marca/plantel:', e); }
+}
+
+/* ---------- Consultas de apoyo para usuarios restringidos ---------- */
+// Último día sincronizado: corporativos usan la misma consulta de siempre; restringidos, una consulta sin cifras.
+function consultaUltimaLecturaDia(cols){
+  if (!alcanceRestringido()) return sb.from('monitor_lecturas_dia').select(cols).order('fecha', { ascending:false }).limit(1);
+  return sb.rpc('monitor_ultima_lectura').then(({ data, error }) => ({ data: data ? [data] : [], error }));
+}
+// Cortes de fotografías y dispositivos recortados en Supabase al alcance del usuario.
+async function cortesAlcance(secciones, una){
+  const { data, error } = await sb.rpc('monitor_cortes_alcance', { p_secciones: secciones });
+  if (error) return { data:null, error };
+  const filas = Array.isArray(data) ? data : [];
+  if (!una) return { data:filas, error:null };
+  return filas[0] ? { data:filas[0], error:null } : { data:null, error:{ message:'No hay corte disponible para tu alcance' } };
+}
+// Combinaciones marca/plantel del alcance (toda la marca → plantel vacío).
+function alcanceCombos(){
+  const out = [];
+  for (const e of ALCANCE.marcas.values()){
+    if (e.toda) out.push([e.marca, '']); else for (const p of e.planteles.values()) out.push([e.marca, p]);
+  }
+  return out;
+}
+// Detalle horario de un día: corporativos, una consulta como siempre; restringidos, una por combinación autorizada.
+async function detalleAlcanceDia(dia){
+  if (!alcanceRestringido()) return detalleHoraCompartido(dia, '', '');
+  const partes = await enParalelo(alcanceCombos(), 2, ([m, p]) => detalleHoraCompartido(dia, m, p));
+  return { registros:[].concat(...partes.map(r => r.registros)), completo:partes.every(r => r.completo) };
+}
+
+/* ---------- Filtros de marca y plantel existentes, limitados al alcance ---------- */
+const ALC_MARCA_SEL = ['genMarca','niFMarca','saludMarca','fotoMarca','mrMarca','fMarca'];
+const ALC_PLANTEL_SEL = { genPlantel:'genMarca', niFPlantel:'niFMarca', saludPlantel:'saludMarca', fotoPlantel:'fotoMarca', mrPlantel:'mrMarca', fPlantel:'fMarca' };
+const ALC_VALOR = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+const alcLeer = sel => ALC_VALOR.get.call(sel);
+const alcFijar = (sel, v) => ALC_VALOR.set.call(sel, v);
+// Formas en que una opción nombra marca/plantel: «UANE», «Torreón», «UANE · Torreón», «clave|Torreón», «Torreón (123)».
+function alcCandidatos(valor, texto){
+  const out = new Set();
+  for (const raw of [valor, texto]){
+    const s = String(raw ?? '').replace(/\s*\([\d.,\s]+\)\s*$/, '');
+    out.add(alcNorm(s)); s.split(/\s*[·|]\s*/).forEach(x => out.add(alcNorm(x)));
+  }
+  out.delete(''); return out;
+}
+function alcOpcion(sel, v){ return [...sel.options].find(o => o.value === v) || null; }
+function alcMarcaEntrada(valor, texto){
+  for (const c of alcCandidatos(valor, texto)) if (ALCANCE.marcas.has(c)) return ALCANCE.marcas.get(c);
+  return null;
+}
+function alcMarcaDeSelect(id){
+  const sel = document.getElementById(id); if (!sel) return null;
+  const v = sel.value, op = alcOpcion(sel, v);       // .value ya viene limitado al alcance
+  return alcMarcaEntrada(v, op ? op.textContent : v);
+}
+function alcPermitido(sel, v){
+  const op = alcOpcion(sel, v), texto = op ? op.textContent : v;
+  if (ALC_MARCA_SEL.includes(sel.id)) return v !== '' && !!alcMarcaEntrada(v, texto);
+  const e = alcMarcaDeSelect(ALC_PLANTEL_SEL[sel.id]);
+  const entradas = e ? [e] : [...ALCANCE.marcas.values()];
+  if (v === '' || v === '__SIN__') return entradas.length > 0 && entradas.every(x => x.toda);
+  const cands = alcCandidatos(v, texto);
+  return entradas.some(x => x.toda || [...cands].some(c => x.planteles.has(c)));
+}
+// Valor por omisión: primera opción autorizada; si la lista aún no se carga, el valor del alcance.
+function alcPredeterminado(sel){
+  const op = [...sel.options].find(o => alcPermitido(sel, o.value));
+  if (op) return op.value;
+  let v, t;
+  if (ALC_MARCA_SEL.includes(sel.id)){ const e = [...ALCANCE.marcas.values()][0]; v = t = e.marca; }
+  else {
+    const e = alcMarcaDeSelect(ALC_PLANTEL_SEL[sel.id]) || [...ALCANCE.marcas.values()][0];
+    if (e.toda) return '';
+    v = t = [...e.planteles.values()][0];
+  }
+  if (!alcOpcion(sel, v)){ const o = document.createElement('option'); o.value = v; o.textContent = t; o.dataset.alcance = '1'; sel.appendChild(o); }
+  return v;
+}
+// Escritura exacta de los datos para un valor que no salió de una lista del monitor (filtro guardado de una sesión
+// anterior o valor precargado): «REYNOSA» → «Reynosa». Las opciones que construyen los módulos no se tocan.
+function alcCanonico(sel, v){
+  if (v === '' || v === '__SIN__') return v;
+  const op = alcOpcion(sel, v);
+  if (op && !op.dataset.tmp && !op.dataset.alcance) return v;
+  const k = alcNorm(v);
+  if (ALC_MARCA_SEL.includes(sel.id)){ const e = ALCANCE.marcas.get(k); return e ? e.marca : v; }
+  for (const e of ALCANCE.marcas.values()) if (e.planteles.has(k)) return e.planteles.get(k);
+  return v;
+}
+function alcFijarCanonico(sel, v){
+  const c = alcCanonico(sel, v);
+  if (c !== v){
+    const op = alcOpcion(sel, v);
+    if (op && !alcOpcion(sel, c)){ op.value = c; op.textContent = c; } else if (op) op.remove();
+  }
+  alcFijar(sel, c);
+}
+function alcDepurar(sel){
+  for (const o of [...sel.options]) if (!o.dataset.alcance && !alcPermitido(sel, o.value)) o.remove();
+  const v = alcLeer(sel);
+  if (!alcPermitido(sel, v) || !alcOpcion(sel, v)) alcFijar(sel, alcPredeterminado(sel));
+  else alcFijarCanonico(sel, v);
+}
+function alcanceInstalar(){
+  if (!alcanceRestringido()) return;              // corporativo: sin cambios
+  const todos = [...ALC_MARCA_SEL, ...Object.keys(ALC_PLANTEL_SEL)];
+  for (const id of todos){
+    const sel = document.getElementById(id); if (!sel || sel.dataset.alcanceListo) continue;
+    sel.dataset.alcanceListo = '1';
+    // Cualquier lectura o asignación del filtro (módulos, «Limpiar», filtros guardados) queda dentro del alcance.
+    Object.defineProperty(sel, 'value', {
+      configurable:true,
+      get(){ const v = alcLeer(this); return alcPermitido(this, v) ? alcCanonico(this, v) : alcPredeterminado(this); },
+      set(v){ alcFijar(this, v); const a = alcLeer(this); if (!alcPermitido(this, a)) alcFijar(this, alcPredeterminado(this)); else alcFijarCanonico(this, a); }
+    });
+    // Cuando un módulo vuelve a llenar la lista, se retiran las opciones no autorizadas.
+    new MutationObserver(() => alcDepurar(sel)).observe(sel, { childList:true });
+  }
+  for (const id of ALC_MARCA_SEL){ const s = document.getElementById(id); if (s) alcDepurar(s); }
+  for (const id of Object.keys(ALC_PLANTEL_SEL)){ const s = document.getElementById(id); if (s) alcDepurar(s); }
+}
 </script>
 </body>
 </html>
