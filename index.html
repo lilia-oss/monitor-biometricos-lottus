@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
-<title>Monitor Lottus · Asistencia y seguimiento fotos · v7.7 alcance</title>
+<title>Monitor Lottus · Asistencia y seguimiento fotos · v8.7 incidencias</title>
 <link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <script>
 /* v4 · Arranque sin parpadeo: si hay una sesión guardada, se oculta el acceso y la interfaz mientras se valida.
@@ -590,6 +590,54 @@ select,input[type=text],input[type=password],input[type=search],input[type=email
   footer{padding:20px 14px 28px}
 }
 @media(max-width:420px){.filters .f{flex-basis:100%}}
+/* Navegación compacta: con ocho pestañas, en pantallas de menos de 1600 px las etiquetas de grupo se ocultan
+   y queda solo la línea divisoria entre grupos; los nombres de las pestañas no cambian. */
+@media(max-width:1599px) and (min-width:681px){
+  nav.tabs .tg{font-size:0;padding:0;margin:0 6px;height:22px;align-self:center;border-left:1px solid rgba(255,255,255,.16)}
+  nav.tabs .tg:first-child{display:none}
+  nav.tabs button{padding-left:12px;padding-right:12px}
+}
+@media(min-width:1600px){nav.tabs button{padding-left:11px;padding-right:11px}nav.tabs .tg{padding:0 2px 14px 12px;margin-left:6px}}
+/* Encabezado estable (escritorio): fila 1 = marca a la izquierda y sesión a la derecha;
+   fila 2 = estado de sincronización alineado con el título. No cambia de forma al cargar ni con el ancho. */
+@media(min-width:681px){
+  .hbar{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"marca sesion" "fuentes fuentes";align-items:center;row-gap:12px}
+  .hbar .brand{grid-area:marca;justify-self:start}
+  .hbar #globalSession{grid-area:sesion;justify-self:end;white-space:nowrap}
+  .hbar .src-strip{grid-area:fuentes;margin-left:0;justify-content:flex-start;min-height:26px}
+}
+.src .age.cargando{font-style:normal;color:#7C8186}
+.inc-box{width:min(760px,100%)}
+.inc-tipos{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin:0 0 14px}
+.inc-tipos button{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;padding:14px 18px;background:var(--card);border:0;border-radius:0;box-shadow:none;font:inherit;font-size:13px;color:var(--ink2);cursor:pointer}
+.inc-tipos button:hover{background:#F7F9FA}
+.inc-tipos button.on{color:var(--ink);box-shadow:inset 0 -2px 0 var(--lt-teal)}
+.inc-tipos button.on span{font-weight:600}
+.inc-tipos button.hidden{display:none}
+.inc-tipos button b{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1;font-size:22px;font-weight:600;color:var(--lt-navy);font-variant-numeric:tabular-nums}
+.inc-tipos button b small{font-size:11px;font-weight:500;color:var(--mute)}
+.inc-corta{display:block;max-width:320px;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.inc-mb{padding:20px 24px 24px}
+.inc-form{display:flex;flex-direction:column;gap:10px}
+.inc-form .f{display:flex;flex-direction:column;gap:4px}
+.inc-form textarea{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:3px;resize:vertical}
+.inc-fila2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 12px;align-items:end}
+.inc-btnf{justify-content:flex-end}
+.inc-nota{font-size:12.5px;margin:0}
+.inc-check{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.45}
+.inc-check input{margin-top:3px}
+.inc-err{color:var(--bad);font-size:12.5px;margin:0;min-height:1em}
+.inc-acc{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:4px}
+.inc-datos{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px 18px;margin-bottom:12px}
+.inc-datos span{display:block;font-size:12px}.inc-datos b{font-weight:600;font-size:13.5px}
+.inc-desc{margin:0 0 10px;line-height:1.55}
+.inc-h4{font-size:14px;font-weight:600;color:var(--lt-navy);margin:16px 0 8px}
+.inc-hist{list-style:none;margin:0 0 12px;padding:0 0 0 12px;border-left:2px solid var(--line)}
+.inc-hist li{padding:4px 0 8px;font-size:13px}.inc-hist li span{display:block;font-size:12px}
+#incTabla tbody tr.inc-fila{cursor:pointer}#incTabla tbody tr.inc-fila:focus{outline:2px solid var(--lt-teal);outline-offset:-2px}
+.inc-solicitar{margin:14px 0 0;font-size:13px;color:var(--ink2)}
+.inc-link{background:none;border:0;padding:0;color:var(--lt-teal-dk);font:inherit;font-weight:600;cursor:pointer;text-decoration:underline}
+#incSolPanelLogin label{display:block;margin-top:6px}
 .aviso-descarga{position:fixed;right:18px;bottom:18px;z-index:60;max-width:440px;padding:12px 40px 12px 14px;background:#fff;border:1px solid var(--line);border-left:3px solid var(--lt-teal);border-radius:4px;box-shadow:0 6px 24px rgba(19,41,75,.14);font-size:12.5px;line-height:1.5;color:var(--ink)}
 .aviso-descarga a{color:var(--lt-teal-dk);font-weight:600}
 .aviso-descarga .ad-x{position:absolute;top:6px;right:8px;border:0;background:none;font-size:18px;line-height:1;color:var(--mute);cursor:pointer}
@@ -656,6 +704,7 @@ select,input[type=text],input[type=password],input[type=search],input[type=email
 <span class="tg">Consulta</span>
 <button aria-controls="v-bus" data-v="bus" role="tab">Búsqueda por matrícula<i class="tb" data-b="bus"></i></button>
 <button aria-controls="v-reportes" data-v="reportes" role="tab">Reportes y pendientes<i class="tb" data-b="reportes"></i></button>
+<button aria-controls="v-inc" data-v="inc" role="tab">Incidencias<i class="tb" data-b="inc"></i></button>
 <span class="tg">Administración</span>
 <button aria-controls="v-corp" data-v="corp" role="tab">Corporativo <svg aria-hidden="true" fill="none" height="12" stroke="currentColor" stroke-width="1.4" viewBox="0 0 11 12" width="11"><rect height="6.3" rx="1.3" width="9" x="1" y="5"></rect><path d="M3 5V3.5a2.5 2.5 0 0 1 5 0V5"></path></svg><i class="tb" data-b="corp"></i></button>
 </nav>
@@ -970,6 +1019,33 @@ select,input[type=text],input[type=password],input[type=search],input[type=email
 </section>
 
 <!-- ===================== CORPORATIVO ===================== -->
+<!-- ===================== INCIDENCIAS (ampliación aislada) ===================== -->
+<section class="hidden" id="v-inc" role="tabpanel">
+<div class="pg-head"><div><h2>Incidencias</h2>
+<p class="muted">Reporte y seguimiento de casos de alumnos: no localizados para fotografía, solicitud de perfil en HikCentral y suspensión preventiva del acceso biométrico. Desde aquí no se cargan, reemplazan ni eliminan fotografías.</p></div>
+<div class="filters">
+
+<div class="f"><label for="incFEstatus">Estatus</label><select id="incFEstatus"><option value="">Todos</option><option value="abiertas">Abiertas / en curso</option><option value="cerradas">Cerradas / resueltas</option></select></div>
+<div class="f"><label for="incFBuscar">Buscar</label><input id="incFBuscar" placeholder="Matrícula, nombre o plantel" type="search"/></div>
+<div class="f-act"><button class="btn" id="incNueva" type="button">Nueva incidencia</button></div>
+</div></div>
+<div class="alert warn hidden" id="incAviso"></div>
+<div class="inc-tipos" id="incTipos" role="tablist" aria-label="Tipo de incidencia">
+<button type="button" role="tab" data-t="alumno_no_localizado"><span>Alumno no localizado para fotografía</span><b>0</b></button>
+<button type="button" role="tab" data-t="perfil_hikcentral"><span>Solicitud de perfil en HikCentral</span><b>0</b></button>
+<button type="button" role="tab" data-t="suspension_biometrica"><span>Suspensión preventiva</span><b>0</b></button>
+<button type="button" role="tab" data-t="acceso" class="hidden"><span>Solicitudes de acceso</span><b>0</b></button>
+</div>
+<div class="panel" id="incPanelReg">
+<div class="ph"><div><h3 id="incTablaTit">Alumno no localizado para fotografía</h3><p class="muted" id="incResumen">Incidencias visibles según tu alcance.</p></div></div>
+<div class="tw"><table id="incTabla"><thead></thead><tbody><tr><td class="muted">Sin datos cargados.</td></tr></tbody></table></div>
+</div>
+<div class="panel hidden" id="incSolPanel" style="margin-top:0">
+<div class="ph"><div><h3>Solicitudes de acceso al monitor</h3><p class="muted">Solo administración. Aprobar no crea la cuenta: después regístrala en Supabase Authentication y asigna rol y alcance.</p></div></div>
+<div class="tw"><table id="incSolTabla"><thead><tr><th>Folio</th><th>Nombre</th><th>Correo</th><th>Puesto</th><th>Marca · plantel</th><th>Autorizador</th><th>Estatus</th><th></th></tr></thead><tbody></tbody></table></div>
+</div>
+</section>
+
 <section class="hidden" id="v-corp" role="tabpanel">
 <div class="pg-head"><div><h2>Corporativo</h2><p>Carga exclusiva de Salesforce y conciliación contra biométricos sincronizados automáticamente. Acceso exclusivo para administrador.</p></div></div>
 <div class="panel hidden mt" id="corpNoAdmin"><h3>Esta sección requiere rol administrador</h3><p class="sub" style="margin:4px 0 0">Tu sesión tiene acceso de consulta. Las cargas de información y las tablas de origen solo están disponibles para administradores.</p></div>
@@ -1217,7 +1293,7 @@ let vista = 'gen';
 function show(v){
   vista = v;
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
-  ['gen','ni','salud','fotos','bus','reportes','corp'].forEach(x => $('#v-'+x).classList.toggle('hidden', x !== v));
+  ['gen','ni','salud','fotos','bus','reportes','inc','corp'].forEach(x => $('#v-'+x).classList.toggle('hidden', x !== v));
   // v4: cargarSeccion decide si los datos ya pintados siguen vigentes (misma firma de filtros, dentro del TTL y sin cambios
   // en la fuente). Si lo están, la pestaña se muestra tal cual, sin consultar; si no, se actualiza en segundo plano.
   if (typeof cargarSeccion === 'function') cargarSeccion(v);
@@ -2787,8 +2863,8 @@ async function monitorAuthorize(){
       pintarAcu();
       let inicio='gen';
       try{inicio=localStorage.getItem('lottus_monitor_vista')||sessionStorage.getItem('vista')||'gen';}catch(e){}
-      const hv=location.hash.replace('#','');if(['gen','ni','salud','fotos','bus','reportes','corp'].includes(hv))inicio=hv;
-      if(!['gen','ni','salud','fotos','bus','reportes','corp'].includes(inicio))inicio='gen';
+      const hv=location.hash.replace('#','');if(['gen','ni','salud','fotos','bus','reportes','inc','corp'].includes(hv))inicio=hv;
+      if(!['gen','ni','salud','fotos','bus','reportes','inc','corp'].includes(inicio))inicio='gen';
       // v4: filtros de la sesión restaurados antes de la primera consulta y de mostrar la interfaz.
       alcanceInstalar();   // filtros limitados al alcance antes de restaurar filtros y de la primera consulta
       if(typeof estadoRestaurar==='function')estadoRestaurar();
@@ -3149,7 +3225,7 @@ const FUENTES = {
   dispositivos: { nombre:'Salud de dispositivos', corto:'Dispositivos', warn:15,   crit:60 },
   fotografias:  { nombre:'Fotografías',           corto:'Fotografías',  warn:360,  crit:720 },
   salesforce:   { nombre:'Salesforce',            corto:'Salesforce',   warn:1440, crit:2880 },
-  pa:           { nombre:'Profesor Anfitrión',    corto:'Prof. Anfitrión' }
+  pa:           { nombre:'Profesor Anfitrión',    corto:'Prof. Anfitrión', warn:1440, crit:2880 }   // por día de registro (tabla alumnos)
 };
 const fuentesDe = t => t === 'reportes' ? [$('#mrTipo').value === 'fotos' ? 'fotografias' : 'lecturas'] : (FUENTES_TAB[t] || []);
 const FUENTES_TAB = { gen:['lecturas'], ni:['lecturas','salesforce','pa'], salud:['dispositivos'], fotos:['fotografias'], bus:['lecturas','pa'], reportes:['lecturas','fotografias'], corp:['salesforce','lecturas'] };
@@ -3192,7 +3268,10 @@ async function consultarFuentes(){
   else nuevo.lecturas = hb ? { ts:hb, info, fecha:ul?.fecha, consultado:Date.now() } : { sinMarca:true, info, fecha:ul?.fecha, consultado:Date.now() };
   const sf = s.error ? null : (s.data || [])[0];
   nuevo.salesforce = s.error ? { err:s.error, permiso:esPermiso(s.error) } : (sf?.cargado_en ? { ts:sf.cargado_en } : { sinMarca:true, info:'sin cargas registradas' });
-  nuevo.pa = { sinMarca:true, info:'sin marca de última sincronización verificable' };
+  // Profesor Anfitrión: fecha del último registro de asistencia en su tabla «alumnos» (solo la fecha, sin datos de alumnos).
+  const paR = await sb.rpc('monitor_pa_ultimo_registro').then(r => r, e => ({ error:e }));
+  if (!paR.error && paR.data?.fecha) nuevo.pa = { ts: paR.data.fecha + 'T23:59:59-06:00', fechaPA: paR.data.fecha };
+  else nuevo.pa = { sinMarca:true, info:'sin marca de última sincronización verificable' };
   estadoFuentes = nuevo; fuentesConsultadas = Date.now();
 }
 function estadoDe(k){
@@ -3207,12 +3286,20 @@ function estadoDe(k){
 }
 const edad = m => m < 1 ? 'hace menos de 1 min' : m < 60 ? `hace ${Math.round(m)} min` : m < 1440 ? `hace ${Math.floor(m/60)} h ${Math.round(m%60)} min` : `hace ${Math.floor(m/1440)} d ${Math.floor(m%1440/60)} h`;
 const umbral = m => m < 60 ? m + ' min' : (m % 60 ? `${Math.floor(m/60)} h ${m%60} min` : `${m/60} h`);
+// «hoy», «ayer» o «el 03/11» para la fecha del último registro de Profesor Anfitrión.
+function paDia(f){
+  const hoy = hoyCDMX(), d = new Date(hoy + 'T12:00:00'); d.setDate(d.getDate() - 1);
+  const ayer = d.toISOString().slice(0, 10);
+  return f === hoy ? 'hoy' : f === ayer ? 'ayer' : 'el ' + f.slice(8, 10) + '/' + f.slice(5, 7);
+}
 function pintarFuentes(){
   const strip = $('#srcStrip');
   if (strip) strip.innerHTML = Object.keys(FUENTES).map(k => {
     const st = estadoDe(k), e = estadoFuentes[k] || {}, f = FUENTES[k];
-    const corto = st.min != null ? 'sync '+edad(st.min).replace('hace ','') : st.s === 'rojo' ? 'error' : e.permiso ? 'sin permiso' : 'sin marca';
-    const tip = `${f.nombre}: ${st.t}` + (e.ts ? ` · sincronizado ${horaCdmx(e.ts)}` : '') + (e.info && k !== 'pa' ? ` · ${e.info}` : '') + (f.warn ? ` · advertencia > ${umbral(f.warn)}, crítico > ${umbral(f.crit)}` : '');
+    // Mientras no responde la primera consulta de fuentes se muestra «consultando…», no un estado.
+    if (!fuentesConsultadas) return `<span class="src"><i class="dot gris"></i><b>${f.corto}</b><span class="age cargando">consultando…</span></span>`;
+    const corto = e.fechaPA ? 'registro ' + paDia(e.fechaPA) : st.min != null ? 'sync '+edad(st.min).replace('hace ','') : st.s === 'rojo' ? 'error' : e.permiso ? 'sin permiso' : 'sin marca';
+    const tip = `${f.nombre}: ${st.t}` + (e.fechaPA ? ` · último registro de asistencia ${paDia(e.fechaPA)}` : e.ts ? ` · sincronizado ${horaCdmx(e.ts)}` : '') + (e.info && k !== 'pa' ? ` · ${e.info}` : '') + (f.warn ? ` · advertencia > ${umbral(f.warn)}, crítico > ${umbral(f.crit)}` : '');
     return `<span class="src" title="${esc(tip)}"><i class="dot ${st.s}"></i><b>${f.corto}</b><span class="age">${esc(corto)}</span></span>`;
   }).join('');
   const keys = fuentesDe(vista);
@@ -3223,15 +3310,16 @@ function pintarFuentes(){
     let txt = e.ts ? `Último corte: ${horaCdmx(e.ts)} · ${edad(st.min)}` : (k==='lecturas' && e.consultado ? `Sin corte verificable · consulta realizada ${edad((Date.now()-e.consultado)/60000)}` : `Sin corte verificable · ${st.t}`);
     if (k === 'lecturas' && e.info) txt += ` · ${e.info}`;
     const corta = d => new Date(d).toLocaleString('es-MX',{timeZone:'America/Mexico_City',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
-    let linea = e.ts ? `Corte ${corta(e.ts)} · ${edad(st.min)}` : (st.s === 'gris' ? 'Sin corte verificable' : st.t);
+    if (e.fechaPA) txt = `Último registro de asistencia ${paDia(e.fechaPA)}`;
+    let linea = e.fechaPA ? `Último registro de asistencia ${paDia(e.fechaPA)}` : e.ts ? `Corte ${corta(e.ts)} · ${edad(st.min)}` : (st.s === 'gris' ? 'Sin corte verificable' : st.t);
     const franja = k === 'lecturas' && e.info ? (String(e.info).match(/franja (\d\d:\d\d–\d\d:\d\d)/) || [])[1] : '';
     if (franja) linea += ` · eventos hasta ${franja}`;
     const tip = `${f.nombre}: ${txt}` + (f.warn ? ` · Advertencia: más de ${umbral(f.warn)} · Crítico: más de ${umbral(f.crit)}` : '');
     return `<span class="fz" title="${esc(tip)}"><i class="dot ${st.s}"></i><b>${f.nombre}</b><span class="fz-t">${esc(linea)}</span></span>`;
   }).join('') || 'Sin fuentes asociadas';
   const malas = keys.map(k => [k, estadoDe(k)]).filter(([,st]) => st.s === 'ambar' || st.s === 'rojo');
-  $('#ctxAlert').innerHTML = malas.map(([k, st]) => `<div class="alert ${st.s === 'rojo' ? 'bad' : 'warn'}"><b>${FUENTES[k].nombre}: ${esc(st.t)}.</b> ` +
-    (st.min != null ? `La última sincronización fue ${edad(st.min)} (umbral ${st.s === 'rojo' ? 'crítico' : 'de advertencia'}: ${umbral(st.s === 'rojo' ? FUENTES[k].crit : FUENTES[k].warn)}). Las cifras pueden no incluir la información más reciente.` : 'No fue posible confirmar la sincronización de esta fuente.') + '</div>').join('');
+  $('#ctxAlert').innerHTML = malas.map(([k, st]) => `<div class="alert ${st.s === 'rojo' ? 'bad' : 'warn'}"><b>${FUENTES[k].nombre}: ${k === 'pa' ? (st.s === 'rojo' ? 'sin registros desde hace varios días' : 'sin registros recientes') : esc(st.t)}.</b> ` +
+    (estadoFuentes[k]?.fechaPA ? `El último registro de asistencia en Profesor Anfitrión fue ${paDia(estadoFuentes[k].fechaPA)}. Revisa si los profesores están capturando.` : st.min != null ? `La última sincronización fue ${edad(st.min)} (umbral ${st.s === 'rojo' ? 'crítico' : 'de advertencia'}: ${umbral(st.s === 'rojo' ? FUENTES[k].crit : FUENTES[k].warn)}). Las cifras pueden no incluir la información más reciente.` : 'No fue posible confirmar la sincronización de esta fuente.') + '</div>').join('');
   document.querySelectorAll('nav.tabs .tb').forEach(b => {
     const tab = b.dataset.b, peor = fuentesDe(tab).map(k => estadoDe(k).s);
     b.className = 'tb'; b.textContent = ''; b.removeAttribute('title');
@@ -4051,6 +4139,348 @@ function alcanceInstalar(){
   for (const id of Object.keys(ALC_PLANTEL_SEL)){ const s = document.getElementById(id); if (s) alcDepurar(s); }
 }
 </script>
+<div aria-labelledby="incModalTit" aria-modal="true" class="modal hidden" id="incModal" role="dialog">
+<div class="box inc-box"><div class="mh"><div><h3 id="incModalTit">Nueva incidencia</h3><div class="muted" id="incModalSub"></div></div><button aria-label="Cerrar" class="x" id="incModalX" type="button">×</button></div>
+<div class="inc-mb" id="incModalCuerpo"></div></div></div>
+<script>
+/* ===================== Incidencias y solicitudes de acceso (ampliación aislada) =====================
+   · Todas las escrituras van a funciones de Supabase que validan rol, permisos y plantel (migración aparte).
+   · Si la migración no está instalada, la pestaña lo indica y no permite registrar nada.
+   · No existe ninguna acción que suba, reemplace o elimine fotografías.
+   · Ninguna acción del navegador bloquea un acceso real: «Aplicado» solo lo registra la integración con
+     HikCentral (backend con service_role) cuando el cambio se confirma en los dispositivos. */
+const INC = { perfil:null, instalado:null, filas:[], sel:null, motivos:{
+  riesgo_fisico:'Riesgo para la integridad física de la comunidad',
+  suplantacion_credencial:'Suplantación o uso indebido de credencial',
+  acceso_no_autorizado:'Acceso no autorizado a instalaciones',
+  amenaza_comunidad:'Amenaza a la comunidad',
+  otro_incidente_seguridad:'Otro incidente de seguridad' } };
+const INC_TIPOS = { alumno_no_localizado:'Alumno no localizado para fotografía', perfil_hikcentral:'Solicitud de perfil en HikCentral', suspension_biometrica:'Suspensión preventiva del acceso biométrico' };
+const INC_EST = { abierta:['Abierta','no'], en_proceso:['En proceso','lec'], resuelta:['Resuelta','si'], no_procede:['No procede','na'], cerrada:['Cerrada','na'],
+  solicitado:['Solicitado','no'], autorizado:['Autorizado','lec'], enviando:['Enviando a HikCentral','lec'], pendiente_dispositivos:['Pendiente de confirmación en dispositivos','lec'],
+  aplicado:['Aplicado (confirmado por HikCentral)','bad'], fallido:['Fallido','bad'], en_revision:['En revisión','no'], levantado:['Levantado','si'], rechazado:['Rechazado','na'] };
+const INC_CERRADOS = ['resuelta','no_procede','cerrada','levantado','rechazado'];
+const incEsc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const incFecha = v => v ? new Date(v).toLocaleString('es-MX', { timeZone:'America/Mexico_City', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+const incEstado = e => { const x = INC_EST[e] || [e, 'na']; return `<span class="tag ${x[1]}">${incEsc(x[0])}</span>`; };
+const incFaltaMigracion = err => /PGRST20[0-9]|42883|42P01|does not exist|Could not find the function|schema cache/i.test(String(err?.code || '') + ' ' + String(err?.message || err || ''));
+function incAviso(html, tipo){ const a = document.getElementById('incAviso'); if (!html){ a.classList.add('hidden'); return; } a.className = 'alert ' + (tipo || 'warn'); a.innerHTML = html; }
+
+async function incCargar(){
+  if (!monitorStarted) return;
+  const { data:pf, error:e1 } = await sb.rpc('monitor_inc_perfil');
+  if (e1){
+    INC.instalado = !incFaltaMigracion(e1) ? true : false;
+    incAviso(INC.instalado ? 'No se pudo consultar tu perfil de incidencias: ' + incEsc(e1.message) :
+      '<b>La pestaña Incidencias aún no está activa.</b> Falta instalar en Supabase la migración <code>monitor_incidencias_instalar.sql</code>. Mientras tanto no se puede registrar ni consultar ninguna incidencia.');
+    document.getElementById('incNueva').disabled = true; return;
+  }
+  INC.instalado = true; INC.perfil = pf || {};
+  document.getElementById('incNueva').disabled = !pf?.autorizado;
+  const { data, error } = await sb.from('monitor_incidencias').select('*').order('creado_en', { ascending:false }).limit(500);
+  if (error){ incAviso('No se pudieron consultar las incidencias: ' + incEsc(error.message), 'bad'); return; }
+  incAviso('');
+  INC.filas = data || [];
+  INC.sol = [];
+  if (pf.administrador) await incSolicitudes();
+  incPintar();
+  if (typeof marcarFirma === 'function') marcarFirma('inc', []);
+}
+// Columnas propias de cada tipo de incidencia.
+const incAlumno = [['Matrícula', r => `<b>${incEsc(r.matricula)}</b>`], ['Nombre', r => incEsc(r.alumno_nombre || '—')], ['Carrera', r => incEsc(r.alumno_carrera || '—')],
+  ['Marca · plantel', r => `${incEsc(r.marca)} · ${incEsc(r.plantel)}`]];
+const INC_COLS = {
+  alumno_no_localizado: [...incAlumno, ['Descripción', r => `<span class="inc-corta">${incEsc(r.descripcion)}</span>`], ['Estatus', r => incEstado(r.estatus)],
+    ['Responsable', r => incEsc(r.responsable || '—')], ['Registrada', r => incFecha(r.creado_en)]],
+  perfil_hikcentral: [...incAlumno, ['Motivo', r => `<span class="inc-corta">${incEsc(r.motivo || '—')}</span>`], ['Estatus', r => incEstado(r.estatus)],
+    ['Perfil confirmado', r => r.perfil_confirmado ? '<span class="tag si">Sí</span>' : '<span class="tag na">No</span>'], ['Responsable', r => incEsc(r.responsable || '—')]],
+  suspension_biometrica: [...incAlumno, ['Motivo', r => incEsc(INC.motivos[r.motivo] || r.motivo || '—')], ['Estado', r => incEstado(r.estatus)],
+    ['Vigencia hasta', r => incFecha(r.vigencia_hasta)], ['Aplicado en HikCentral', r => r.aplicado_en ? incFecha(r.aplicado_en) : 'No']]
+};
+INC.tipo = (() => { try { return sessionStorage.getItem('lottus_inc_tipo') || 'alumno_no_localizado'; } catch(e){ return 'alumno_no_localizado'; } })();
+function incPintar(){
+  const admin = !!INC.perfil?.administrador;
+  if (INC.tipo === 'acceso' && !admin) INC.tipo = 'alumno_no_localizado';
+  const est = document.getElementById('incFEstatus').value, q = alcNorm(document.getElementById('incFBuscar').value);
+  const abierta = r => !INC_CERRADOS.includes(r.estatus);
+  // Contadores: incidencias abiertas por tipo; solicitudes pendientes.
+  document.querySelectorAll('#incTipos button').forEach(b => {
+    const t = b.dataset.t, on = t === INC.tipo;
+    b.classList.toggle('on', on); b.setAttribute('aria-selected', on);
+    const n = t === 'acceso' ? (INC.sol || []).filter(x => x.estatus === 'pendiente').length : INC.filas.filter(r => r.tipo === t && abierta(r)).length;
+    if (t === 'acceso') b.classList.toggle('hidden', !admin);
+    b.querySelector('b').innerHTML = `${n}<small>${t === 'acceso' ? (n === 1 ? 'pendiente' : 'pendientes') : (n === 1 ? 'abierta' : 'abiertas')}</small>`;
+  });
+  const acceso = INC.tipo === 'acceso';
+  document.getElementById('incPanelReg').classList.toggle('hidden', acceso);
+  document.getElementById('incSolPanel').classList.toggle('hidden', !acceso);
+  const sinSolicitud = INC.tipo === 'suspension_biometrica' && !INC.perfil?.solicitar_suspension;
+  document.getElementById('incNueva').classList.toggle('hidden', acceso || sinSolicitud);
+  if (acceso){ incPintarSolicitudes(); return; }
+  const cols = INC_COLS[INC.tipo], delTipo = INC.filas.filter(r => r.tipo === INC.tipo);
+  const filas = delTipo.filter(r => (!est || (est === 'cerradas' ? !abierta(r) : abierta(r)))
+    && (!q || alcNorm([r.matricula, r.alumno_nombre, r.alumno_carrera, r.plantel, r.marca, r.folio].join(' ')).includes(q)));
+  document.getElementById('incTablaTit').textContent = INC_TIPOS[INC.tipo];
+  const papel = INC.tipo !== 'suspension_biometrica' ? '' : INC.perfil?.autorizar_suspension
+    ? ' Las solicitan directores autorizados; aquí las autorizas, rechazas o levantas.'
+    : (INC.perfil?.solicitar_suspension ? '' : ' Las registran directores autorizados.');
+  document.getElementById('incResumen').textContent = `${filas.length.toLocaleString('es-MX')} de ${delTipo.length.toLocaleString('es-MX')} registros visibles según tu alcance.${papel}`;
+  document.querySelector('#incTabla thead').innerHTML = '<tr>' + cols.map(c => `<th>${c[0]}</th>`).join('') + '</tr>';
+  document.querySelector('#incTabla tbody').innerHTML = filas.length ? filas.map(r => `<tr class="inc-fila" data-id="${incEsc(r.id)}" tabindex="0">${cols.map(c => `<td>${c[1](r)}</td>`).join('')}</tr>`).join('')
+    : `<tr><td class="muted" colspan="${cols.length}">${delTipo.length ? 'Ningún registro coincide con los filtros.' : 'No hay registros de este tipo en tu alcance.'}</td></tr>`;
+}
+document.querySelectorAll('#incTipos button').forEach(b => b.onclick = () => { INC.tipo = b.dataset.t; try { sessionStorage.setItem('lottus_inc_tipo', INC.tipo); } catch(e){} incPintar(); });
+document.getElementById('incFEstatus').addEventListener('change', incPintar);
+document.getElementById('incFBuscar').addEventListener('input', incPintar);
+document.querySelector('#incTabla tbody').addEventListener('click', e => { const tr = e.target.closest('.inc-fila'); if (tr) incDetalle(tr.dataset.id); });
+document.querySelector('#incTabla tbody').addEventListener('keydown', e => { const tr = e.target.closest('.inc-fila'); if (tr && e.key === 'Enter') incDetalle(tr.dataset.id); });
+
+/* ---------- Modal ---------- */
+const incModal = document.getElementById('incModal');
+function incAbrir(titulo, sub, html){ document.getElementById('incModalTit').textContent = titulo; document.getElementById('incModalSub').textContent = sub || ''; document.getElementById('incModalCuerpo').innerHTML = html; incModal.classList.remove('hidden'); }
+function incCerrar(){ incModal.classList.add('hidden'); }
+document.getElementById('incModalX').onclick = incCerrar;
+incModal.addEventListener('click', e => { if (e.target === incModal) incCerrar(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !incModal.classList.contains('hidden')) incCerrar(); });
+
+/* ---------- Marca y plantel según alcance ---------- */
+function incOpcionesAlcance(){
+  if (typeof alcanceRestringido === 'function' && alcanceRestringido()){
+    return { restringido:true, combos: alcanceCombos() };   // [marca, plantel] ; plantel '' = toda la marca
+  }
+  const marcas = [...document.querySelectorAll('#genMarca option')].map(o => o.value).filter(Boolean);
+  const planteles = [...document.querySelectorAll('#genPlantel option')].map(o => o.value).filter(Boolean);
+  return { restringido:false, marcas, planteles };
+}
+function incCamposAlcance(){
+  const o = incOpcionesAlcance();
+  if (o.restringido){
+    const unicos = o.combos.filter(c => c[1]);
+    const marcaToda = o.combos.find(c => !c[1]);
+    if (marcaToda && !unicos.length) return `<div class="f"><label>Marca</label><input id="incMarca" value="${incEsc(marcaToda[0])}" readonly/></div>
+      <div class="f"><label for="incPlantel">Plantel</label><input id="incPlantel" placeholder="Plantel de ${incEsc(marcaToda[0])}" required/></div>`;
+    if (o.combos.length === 1) return `<div class="f"><label>Marca · plantel</label><div class="inc-fijo" id="incFijo">${incEsc(o.combos[0][0])} · ${incEsc(o.combos[0][1])} <span class="muted">· tu plantel</span></div>
+      <select id="incCombo" class="hidden"><option value="${incEsc(o.combos[0][0] + '|' + o.combos[0][1])}" selected></option></select></div>`;
+    return `<div class="f"><label for="incCombo">Marca · plantel (tus planteles)</label><select id="incCombo">${o.combos.map(c => `<option value="${incEsc(c[0] + '|' + c[1])}">${incEsc(c[0])} · ${incEsc(c[1] || 'toda la marca')}</option>`).join('')}</select></div>`;
+  }
+  return `<div class="f"><label for="incMarca">Marca</label><input id="incMarca" list="incMarcasL" required placeholder="Se llena al encontrar al alumno"/><datalist id="incMarcasL">${o.marcas.map(m => `<option value="${incEsc(m)}">`).join('')}</datalist></div>
+    <div class="f"><label for="incPlantel">Plantel</label><input id="incPlantel" list="incPlantelesL" required/><datalist id="incPlantelesL">${o.planteles.map(m => `<option value="${incEsc(m)}">`).join('')}</datalist></div>`;
+}
+function incLeerAlcance(){
+  const c = document.getElementById('incCombo');
+  if (c){ const [m, p] = c.value.split('|'); return [m, p]; }
+  return [document.getElementById('incMarca').value.trim(), document.getElementById('incPlantel').value.trim()];
+}
+
+/* ---------- Nueva incidencia ---------- */
+document.getElementById('incNueva').onclick = () => {
+  const pf = INC.perfil || {};
+  // Solo los tipos que este usuario puede registrar (la suspensión, únicamente directores autorizados).
+  const tipos = Object.entries(INC_TIPOS).filter(([k]) => k !== 'suspension_biometrica' || pf.solicitar_suspension);
+  incAbrir('Nueva incidencia', 'Se registra con tu usuario, fecha y hora del servidor y un folio automático.', `
+  <form id="incForm" class="inc-form" novalidate>
+    <div class="f"><label for="incTipo">Tipo de incidencia</label><select id="incTipo">${tipos.map(([k, v]) => `<option value="${k}"${k === INC.tipo ? ' selected' : ''}>${incEsc(v)}</option>`).join('')}</select></div>
+    <div class="inc-fila2"><div class="f"><label for="incMat">Matrícula</label><input id="incMat" required maxlength="30" autocomplete="off" placeholder="Al escribirla se busca al alumno"/></div>
+      <div class="f inc-btnf"><button class="btn ghost" id="incBuscarCoinc" type="button">Buscar alumno</button></div></div>
+    <div id="incCoinc" class="muted inc-nota"></div>
+    <div class="inc-fila2"><div class="f"><label for="incNombre">Nombre del alumno</label><input id="incNombre" maxlength="160" placeholder="Se llena si el alumno aparece"/></div>
+      <div class="f"><label for="incCarrera">Carrera</label><input id="incCarrera" maxlength="160"/></div></div>
+    <div class="inc-fila2">${incCamposAlcance()}</div>
+    <div class="f"><label for="incDesc">Descripción</label><textarea id="incDesc" rows="3" maxlength="2000" required placeholder="Qué ocurrió y qué se necesita"></textarea></div>
+    <div id="incExtra"></div>
+    <p class="inc-err" id="incErr" role="alert"></p>
+    <div class="inc-acc"><button class="btn ghost" type="button" id="incCancelar">Cancelar</button><button class="btn" type="submit" id="incGuardar">Registrar incidencia</button></div>
+  </form>`);
+  const extra = () => {
+    const t = document.getElementById('incTipo').value, x = document.getElementById('incExtra');
+    if (t === 'perfil_hikcentral') x.innerHTML = `<div class="f"><label for="incMotivo">Motivo de la solicitud</label><input id="incMotivo" maxlength="300" required placeholder="Por qué el alumno no tiene perfil en HikCentral"/></div>
+      <p class="muted inc-nota">El perfil no se crea automáticamente. Cuando se confirme su creación, la fotografía se carga por el proceso institucional existente.</p>`;
+    else if (t === 'suspension_biometrica') x.innerHTML = `
+      <div class="alert warn inc-nota"><b>Registrar esta solicitud no bloquea el acceso.</b> El bloqueo solo se aplicará cuando la integración con HikCentral esté habilitada, la suspensión esté autorizada y HikCentral confirme el cambio en los dispositivos. No se elimina al alumno ni se modifica su situación académica.</div>
+      <div class="inc-fila2"><div class="f"><label for="incMotivo">Motivo</label><select id="incMotivo">${Object.entries(INC.motivos).map(([k, v]) => `<option value="${k}">${incEsc(v)}</option>`).join('')}</select></div>
+      <div class="f"><label for="incVig">Vigencia solicitada</label><select id="incVig">${[1,2,3,4,5,6,7].map(d => `<option value="${d}"${d === 7 ? ' selected' : ''}>${d} día${d > 1 ? 's' : ''}</option>`).join('')}</select></div></div>
+      <div class="f"><label for="incJust">Justificación</label><textarea id="incJust" rows="3" maxlength="1500" placeholder="Hechos que motivan la medida, sin datos sensibles innecesarios (mínimo 30 caracteres)"></textarea></div>
+      <div class="f"><label for="incRef">Folio de referencia</label><input id="incRef" maxlength="60" placeholder="Folio del reporte institucional del incidente"/></div>
+      <label class="inc-check"><input type="checkbox" id="incConf"/> Confirmo como director que la información es correcta y que solicito la suspensión preventiva del acceso biométrico de este alumno.</label>`;
+    else x.innerHTML = '<p class="muted inc-nota">Usa «Buscar coincidencias» para revisar si el alumno aparece en las fuentes del monitor. Esta incidencia no crea al alumno ni carga su fotografía.</p>';
+    document.getElementById('incGuardar').textContent = t === 'suspension_biometrica' ? 'Registrar solicitud de suspensión' : 'Registrar incidencia';
+  };
+  document.getElementById('incTipo').onchange = extra; extra();
+  document.getElementById('incCancelar').onclick = incCerrar;
+  document.getElementById('incBuscarCoinc').onclick = incBuscarCoincidencias;
+  // Búsqueda automática al terminar de escribir la matrícula.
+  let incTm = null; const mat = document.getElementById('incMat');
+  mat.addEventListener('input', () => { clearTimeout(incTm); incTm = setTimeout(() => { if (mat.value.trim().length >= 4) incBuscarCoincidencias(); }, 700); });
+  mat.addEventListener('change', () => { clearTimeout(incTm); if (mat.value.trim()) incBuscarCoincidencias(); });
+  document.getElementById('incForm').onsubmit = async ev => {
+    ev.preventDefault();
+    const err = document.getElementById('incErr'), btn = document.getElementById('incGuardar'); err.textContent = '';
+    const t = document.getElementById('incTipo').value, [marca, plantel] = incLeerAlcance(), v = id => document.getElementById(id)?.value?.trim() || null;
+    if (!v('incMat') || !marca || !plantel){ err.textContent = 'Matrícula, marca y plantel son obligatorios.'; return; }
+    if (t === 'suspension_biometrica' && !document.getElementById('incConf').checked){ err.textContent = 'Falta tu confirmación expresa.'; return; }
+    btn.disabled = true;
+    const { data, error } = await sb.rpc('monitor_inc_crear', { p_tipo:t, p_matricula:v('incMat'), p_marca:marca, p_plantel:plantel, p_descripcion:v('incDesc') || '',
+      p_motivo:v('incMotivo'), p_justificacion:v('incJust'), p_folio_referencia:v('incRef'),
+      p_vigencia_dias: t === 'suspension_biometrica' ? Number(v('incVig')) : null, p_confirmacion: t === 'suspension_biometrica' ? document.getElementById('incConf').checked : false,
+      p_nombre: v('incNombre') && mrHomologar(v('incNombre')), p_carrera: v('incCarrera') && mrHomologar(v('incCarrera')) });
+    btn.disabled = false;
+    if (error){ err.textContent = error.message; return; }
+    INC.tipo = t; try { sessionStorage.setItem('lottus_inc_tipo', t); } catch(e){}
+    incCerrar(); incAviso(`Incidencia registrada con folio <b>${incEsc(data.folio)}</b>.`, 'info'); await incCargar();
+  };
+};
+async function incBuscarCoincidencias(){
+  const m = document.getElementById('incMat').value.trim(), out = document.getElementById('incCoinc');
+  if (!m){ out.textContent = 'Escribe una matrícula.'; return; }
+  out.innerHTML = '<span class="spin"></span>Buscando al alumno…';
+  const { data, error } = await sb.rpc('fn_pasos_matricula', { p_matriculas:[m], p_fecha:null, p_historico:false });
+  if (error){ out.textContent = 'No se pudo buscar: ' + error.message; return; }
+  const x = (Array.isArray(data?.matriculas) ? data.matriculas : [])[0];
+  if (!x){ out.innerHTML = (data?.fuera_alcance ? 'La matrícula pertenece a otro plantel, fuera de tu alcance.' : 'El alumno no aparece en las fuentes del monitor. Escribe su nombre y carrera.'); return; }
+  out.innerHTML = `Alumno encontrado en las fuentes del monitor: <b>${incEsc(x.marca || '')} · ${incEsc(x.plantel || '')}</b>`;
+  const nom = document.getElementById('incNombre'), car = document.getElementById('incCarrera');
+  if (nom) nom.value = x.nombre_completo || x.nombre || nom.value;
+  if (car) car.value = x.carrera || x.programa || car.value;
+  const c = document.getElementById('incCombo');
+  if (c && x.marca){ const op = [...c.options].find(o => alcNorm(o.value) === alcNorm(x.marca + '|' + (x.plantel || '')) ); if (op) c.value = op.value; }
+  else { const mi = document.getElementById('incMarca'), pi = document.getElementById('incPlantel'); if (mi && !mi.readOnly && !mi.value) mi.value = x.marca || ''; if (pi && !pi.value) pi.value = x.plantel || ''; }
+}
+
+/* ---------- Detalle y seguimiento ---------- */
+async function incDetalle(id){
+  const r = INC.filas.find(x => x.id === id); if (!r) return;
+  INC.sel = r; const pf = INC.perfil || {}, susp = r.tipo === 'suspension_biometrica';
+  incAbrir(`${r.alumno_nombre || r.matricula} · ${INC_TIPOS[r.tipo] || r.tipo}`, `Registrada ${incFecha(r.creado_en)} por ${r.solicitante_nombre || r.solicitante_email || 'usuario autenticado'}`, '<p class="muted"><span class="spin"></span>Cargando seguimiento…</p>');
+  const [{ data:seg }, aud] = await Promise.all([
+    sb.from('monitor_inc_seguimiento').select('*').eq('incidencia_id', id).order('creado_en'),
+    susp && pf.autorizar_suspension ? sb.from('monitor_suspensiones_auditoria').select('*').eq('incidencia_id', id).order('creado_en') : Promise.resolve({ data:null })
+  ]);
+  const dato = (k, v) => `<div><span class="muted">${k}</span><b>${v}</b></div>`;
+  let acciones = '';
+  if (!susp && pf.gestionar){
+    acciones = `<div class="inc-fila2"><div class="f"><label for="incNEst">Estatus</label><select id="incNEst">${['abierta','en_proceso','resuelta','no_procede','cerrada'].map(e => `<option value="${e}"${e === r.estatus ? ' selected' : ''}>${INC_EST[e][0]}</option>`).join('')}</select></div>
+      <div class="f"><label for="incNResp">Responsable</label><input id="incNResp" value="${incEsc(r.responsable || '')}" maxlength="120"/></div></div>
+      ${r.tipo === 'perfil_hikcentral' ? `<label class="inc-check"><input type="checkbox" id="incNPerfil"${r.perfil_confirmado ? ' checked' : ''}/> Perfil creado y confirmado en HikCentral</label>` : ''}`;
+  }
+  let botonesSusp = '';
+  if (susp){
+    const tr = { solicitado:['autorizado','rechazado','en_revision'], autorizado:['en_revision','rechazado','levantado'], en_revision:['autorizado','rechazado','levantado'], fallido:['en_revision','levantado'], aplicado:['en_revision'] }[r.estatus] || [];
+    const permitidas = pf.autorizar_suspension ? tr.filter(e => !(e === 'levantado' && r.aplicado_en)) : [];
+    const etq = { autorizado:'Autorizar', rechazado:'Rechazar', en_revision:'Pasar a revisión', levantado:'Levantar (no aplicada en HikCentral)' };
+    botonesSusp = permitidas.map(e => `<button class="btn ghost inc-trans" data-e="${e}" type="button">${etq[e]}</button>`).join('')
+      + `<button class="btn ghost" type="button" disabled title="Requiere el backend de integración con HikCentral, todavía no habilitado">Enviar a HikCentral (no disponible)</button>`;
+  }
+  document.getElementById('incModalCuerpo').innerHTML = `
+    <div class="inc-datos">${dato('Matrícula', incEsc(r.matricula))}${dato('Nombre', incEsc(r.alumno_nombre || '—'))}${dato('Carrera', incEsc(r.alumno_carrera || '—'))}${dato('Marca · plantel', incEsc(r.marca) + ' · ' + incEsc(r.plantel))}${dato('Estatus', incEstado(r.estatus))}${dato('Responsable', incEsc(r.responsable || '—'))}${dato('Folio', incEsc(r.folio))}
+      ${r.tipo === 'perfil_hikcentral' ? dato('Motivo', incEsc(r.motivo || '—')) + dato('Perfil confirmado', r.perfil_confirmado ? 'Sí' : 'No') + dato('Resolución', incFecha(r.fecha_resolucion)) : ''}
+      ${susp ? dato('Motivo', incEsc(INC.motivos[r.motivo] || r.motivo)) + dato('Vigencia solicitada hasta', incFecha(r.vigencia_hasta)) + dato('Folio de referencia', incEsc(r.folio_referencia || '—')) + dato('Aplicado en HikCentral', r.aplicado_en ? incFecha(r.aplicado_en) : 'No') : ''}</div>
+    <p class="inc-desc">${incEsc(r.descripcion)}</p>
+    ${susp ? `<p class="inc-desc"><span class="muted">Justificación:</span> ${incEsc(r.justificacion || '')}</p>
+      <div class="alert info inc-nota">Una acción registrada no equivale a un bloqueo efectivo. Este caso solo se mostrará como <b>Aplicado</b> cuando HikCentral confirme el cambio en los dispositivos. No se levanta automáticamente al vencer la vigencia.</div>` : ''}
+    <h4 class="inc-h4">Seguimiento</h4>
+    <ol class="inc-hist">${(seg || []).map(s => `<li><span class="muted">${incFecha(s.creado_en)} · ${incEsc(s.autor_email || 'sistema')}</span>
+      <div>${s.estatus_anterior && s.estatus_nuevo && s.estatus_anterior !== s.estatus_nuevo ? incEstado(s.estatus_anterior) + ' → ' + incEstado(s.estatus_nuevo) + ' ' : (s.accion === 'registro' ? 'Registro · ' : '')}${incEsc(s.comentario || '')}</div></li>`).join('') || '<li class="muted">Sin movimientos.</li>'}</ol>
+    ${aud?.data ? `<h4 class="inc-h4">Auditoría de la suspensión</h4><div class="tw"><table><thead><tr><th>Fecha (servidor)</th><th>Acción</th><th>Usuario</th><th>Rol</th><th>Resultado</th><th>Ejecución HikCentral</th></tr></thead><tbody>
+      ${aud.data.map(a => `<tr><td>${incFecha(a.creado_en)}</td><td>${incEsc(a.accion)}</td><td>${incEsc(a.actor_email || '')}</td><td>${incEsc(a.actor_rol || '')}</td><td>${incEsc(a.resultado || a.estatus_resultante || '')}</td><td>${incEsc(a.hik_ejecucion_id || '—')}</td></tr>`).join('')}</tbody></table></div>` : ''}
+    <form id="incSegForm" class="inc-form" novalidate>
+      ${acciones}
+      <div class="f"><label for="incCom">Comentario${susp ? ' (obligatorio para cambiar el estado)' : ''}</label><textarea id="incCom" rows="2" maxlength="2000"></textarea></div>
+      <p class="inc-err" id="incErr2" role="alert"></p>
+      <div class="inc-acc">${botonesSusp}<button class="btn" type="submit">${acciones ? 'Guardar cambios' : 'Agregar comentario'}</button></div>
+    </form>`;
+  const enviar = async estatus => {
+    const err = document.getElementById('incErr2'); err.textContent = '';
+    const com = document.getElementById('incCom').value.trim();
+    const args = { p_id:r.id, p_estatus: estatus || document.getElementById('incNEst')?.value || null,
+      p_responsable: document.getElementById('incNResp')?.value.trim() || null, p_comentario: com || null,
+      p_perfil_confirmado: document.getElementById('incNPerfil') ? document.getElementById('incNPerfil').checked : null };
+    if (!acciones && !estatus && !com){ err.textContent = 'Escribe un comentario.'; return; }
+    const { error } = await sb.rpc('monitor_inc_actualizar', args);
+    if (error){ err.textContent = error.message; return; }
+    await incCargar(); incDetalle(r.id);
+  };
+  document.getElementById('incSegForm').onsubmit = ev => { ev.preventDefault(); enviar(null); };
+  document.querySelectorAll('.inc-trans').forEach(b => b.onclick = () => enviar(b.dataset.e));
+}
+
+/* ---------- Bandeja de solicitudes de acceso (administración) ---------- */
+async function incSolicitudes(){
+  const { data, error } = await sb.from('monitor_solicitudes_acceso').select('*').order('creado_en', { ascending:false }).limit(200);
+  INC.sol = error ? [] : (data || []);
+}
+function incPintarSolicitudes(){
+  const data = INC.sol || [];
+  const est = { pendiente:['Pendiente','no'], aprobada:['Aprobada','si'], rechazada:['Rechazada','na'], info_requerida:['Información requerida','lec'] };
+  document.querySelector('#incSolTabla tbody').innerHTML = (data || []).map(s => `<tr><td><b>${incEsc(s.folio)}</b><div class="muted">${incFecha(s.creado_en)}</div></td><td>${incEsc(s.nombre)}</td><td>${incEsc(s.correo)}</td><td>${incEsc(s.puesto)}</td>
+    <td>${incEsc(s.marca)} · ${incEsc(s.plantel)}</td><td>${incEsc(s.autorizador)}</td><td><span class="tag ${est[s.estatus]?.[1] || 'na'}">${est[s.estatus]?.[0] || s.estatus}</span>${s.nota_admin ? `<div class="muted">${incEsc(s.nota_admin)}</div>` : ''}</td>
+    <td>${s.estatus === 'pendiente' || s.estatus === 'info_requerida' ? `<button class="btn ghost sm inc-sol" data-id="${s.id}" type="button">Revisar</button>` : ''}</td></tr>`).join('')
+    || '<tr><td class="muted" colspan="8">No hay solicitudes de acceso.</td></tr>';
+  document.querySelectorAll('.inc-sol').forEach(b => b.onclick = () => {
+    const s = data.find(x => x.id === b.dataset.id);
+    incAbrir(`Solicitud ${s.folio}`, `${s.nombre} · ${s.correo}`, `<div class="inc-datos"><div><span class="muted">Puesto</span><b>${incEsc(s.puesto)}</b></div><div><span class="muted">Marca · plantel</span><b>${incEsc(s.marca)} · ${incEsc(s.plantel)}</b></div><div><span class="muted">Autorizador</span><b>${incEsc(s.autorizador)}</b></div></div>
+      <p class="inc-desc">${incEsc(s.justificacion)}</p>
+      <div class="alert info inc-nota">Aprobar <b>no crea la cuenta</b>. Después da de alta al usuario en Supabase Authentication y regístralo en <code>monitor_usuarios_autorizados</code> y <code>monitor_alcances</code>.</div>
+      <form class="inc-form" id="incSolForm" novalidate><div class="f"><label for="incSolNota">Nota para el solicitante</label><textarea id="incSolNota" rows="2" maxlength="600"></textarea></div><p class="inc-err" id="incErr3"></p>
+      <div class="inc-acc"><button class="btn ghost" data-e="info_requerida" type="button">Solicitar información</button><button class="btn ghost" data-e="rechazada" type="button">Rechazar</button><button class="btn" data-e="aprobada" type="button">Aprobar</button></div></form>`);
+    document.querySelectorAll('#incSolForm button').forEach(x => x.onclick = async () => {
+      const { error } = await sb.rpc('monitor_acceso_resolver', { p_id:s.id, p_estatus:x.dataset.e, p_nota:document.getElementById('incSolNota').value.trim() || null });
+      if (error){ document.getElementById('incErr3').textContent = error.message; return; }
+      incCerrar(); await incSolicitudes(); incPintar();
+    });
+  });
+}
+
+/* ---------- Solicitar acceso (pantalla de inicio de sesión, sin sesión) ---------- */
+(function(){
+  const card = document.querySelector('#accessGate .access-card'); if (!card) return;
+  const link = document.createElement('p'); link.className = 'inc-solicitar';
+  link.innerHTML = '¿Aún no tienes acceso? <button type="button" class="inc-link" id="incSolAbrir">Solicitar acceso</button>';
+  card.appendChild(link);
+  const panel = document.createElement('div'); panel.className = 'hidden'; panel.id = 'incSolPanelLogin';
+  panel.innerHTML = `<form id="incSolLogin" class="inc-form" novalidate>
+    <label for="sNom">Nombre completo</label><input id="sNom" maxlength="120" required/>
+    <label for="sCor">Correo institucional</label><input id="sCor" type="email" maxlength="160" required/>
+    <label for="sPue">Puesto</label><input id="sPue" maxlength="120" required/>
+    <div class="inc-fila2"><div><label for="sMar">Marca</label><input id="sMar" maxlength="80" required/></div><div><label for="sPla">Plantel</label><input id="sPla" maxlength="120" required/></div></div>
+    <label for="sJus">Justificación de acceso</label><textarea id="sJus" rows="3" maxlength="1500" required></textarea>
+    <label for="sAut">Responsable que autoriza</label><input id="sAut" maxlength="160" required placeholder="Nombre de tu jefe inmediato o director"/>
+    <p class="inc-err" id="sErr" role="alert"></p>
+    <div class="inc-acc"><button class="btn ghost" type="button" id="sVolver">Volver a iniciar sesión</button><button class="btn" type="submit" id="sEnviar">Enviar solicitud</button></div>
+    <p class="muted inc-nota">La solicitud llega a administración. El acceso no se habilita automáticamente.</p></form>`;
+  card.appendChild(panel);
+  const login = document.getElementById('monitorLoginForm');
+  const alternar = ver => { panel.classList.toggle('hidden', !ver); login.classList.toggle('hidden', ver); link.classList.toggle('hidden', ver); };
+  document.getElementById('incSolAbrir').onclick = () => alternar(true);
+  document.getElementById('sVolver').onclick = () => alternar(false);
+  document.getElementById('incSolLogin').onsubmit = async ev => {
+    ev.preventDefault();
+    const g = id => document.getElementById(id).value.trim(), err = document.getElementById('sErr'), btn = document.getElementById('sEnviar');
+    if (!g('sNom') || !g('sCor') || !g('sPue') || !g('sMar') || !g('sPla') || g('sJus').length < 20 || !g('sAut')){ err.textContent = 'Completa todos los campos; la justificación necesita al menos 20 caracteres.'; return; }
+    btn.disabled = true; err.textContent = '';
+    const { data, error } = await sb.rpc('monitor_acceso_solicitar', { p_nombre:g('sNom'), p_correo:g('sCor'), p_puesto:g('sPue'), p_marca:g('sMar'), p_plantel:g('sPla'), p_justificacion:g('sJus'), p_autorizador:g('sAut') });
+    btn.disabled = false;
+    if (error){ err.textContent = incFaltaMigracion(error) ? 'Las solicitudes de acceso aún no están habilitadas. Contacta a administración.' : error.message; return; }
+    panel.innerHTML = `<div class="alert info">Solicitud enviada con folio <b>${incEsc(data.folio)}</b>. Administración la revisará; el acceso no se habilita automáticamente.</div><button class="btn ghost" type="button" id="sVolver2">Volver a iniciar sesión</button>`;
+    document.getElementById('sVolver2').onclick = () => location.reload();
+  };
+})();
+
+/* ---------- Encabezado: insignias de sincronización visibles desde el inicio ---------- */
+(function(){
+  const st = document.getElementById('srcStrip');
+  if (st && !st.children.length && typeof FUENTES === 'object')
+    st.innerHTML = Object.keys(FUENTES).map(k => `<span class="src"><i class="dot gris"></i><b>${FUENTES[k].corto}</b><span class="age cargando">consultando…</span></span>`).join('');
+})();
+
+/* ---------- Integración con la navegación existente ---------- */
+TABS_V2.push('inc');
+FUENTES_TAB.inc = [];
+window.incCargar = typeof v4Seguir === 'function' ? v4Seguir('inc', incCargar) : incCargar;
+document.getElementById('fuenteCorteRefresh')?.addEventListener('click', () => { if (vista === 'inc') window.incCargar(); });
+const incCargarSeccionOrig = cargarSeccion;
+cargarSeccion = function(v, forzar){ if (v === 'inc') return window.incCargar(); return incCargarSeccionOrig(v, forzar); };
+</script>
+
 <div id="avisoDescarga" class="aviso-descarga hidden" role="status" aria-live="polite"></div>
 <script>
 /* Descargas de Excel (todas las pestañas): mismo archivo de siempre, con dos respaldos.
