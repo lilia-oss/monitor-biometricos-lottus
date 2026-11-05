@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
-<title>Monitor Lottus · Asistencia y seguimiento fotos · v7.2 alcance</title>
+<title>Monitor Lottus · Asistencia y seguimiento fotos · v7.7 alcance</title>
 <link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <script>
 /* v4 · Arranque sin parpadeo: si hay una sesión guardada, se oculta el acceso y la interfaz mientras se valida.
@@ -590,6 +590,9 @@ select,input[type=text],input[type=password],input[type=search],input[type=email
   footer{padding:20px 14px 28px}
 }
 @media(max-width:420px){.filters .f{flex-basis:100%}}
+.aviso-descarga{position:fixed;right:18px;bottom:18px;z-index:60;max-width:440px;padding:12px 40px 12px 14px;background:#fff;border:1px solid var(--line);border-left:3px solid var(--lt-teal);border-radius:4px;box-shadow:0 6px 24px rgba(19,41,75,.14);font-size:12.5px;line-height:1.5;color:var(--ink)}
+.aviso-descarga a{color:var(--lt-teal-dk);font-weight:600}
+.aviso-descarga .ad-x{position:absolute;top:6px;right:8px;border:0;background:none;font-size:18px;line-height:1;color:var(--mute);cursor:pointer}
 /* Rejilla de dos indicadores (NI / RI en General): no tenía columnas definidas */
 .kpis.k2{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media(max-width:520px){.kpis.k2{grid-template-columns:1fr}}
@@ -2165,7 +2168,7 @@ function fotoConsolidar(corte){
  for(const x of [...R.planteles.values(),...R.sin.values()]){const m=R.marcas.get(x.mk);if(m)x.marca=m.marca;}
  return R;
 }
-let fotoCargaPr=null;
+let fotoCargaPr=null, fotoHuellaPintada=null;
 async function cargarFotografias(){
  if(vista!=='fotos')return;
  if(fotoCargaPr)return fotoCargaPr;          // v4: una sola consulta en curso
@@ -2211,6 +2214,10 @@ async function cargarFotografias_(){
    } catch(e) { alertas.push(['warn','No se pudo comprobar el listado <code>monitor_sin_foto</code>: '+esc(e?.message||e)]); }
  }
  if(vista!=='fotos' && !nCons && fotoCons) return;   // respuesta tardía con error mientras se ve otra pestaña: no se pisa
+ // Mismo corte que el que ya está en pantalla: solo se actualiza el texto de sincronización (nada se mueve).
+ const huella=nCorte?JSON.stringify([nCorte,nSin,alertas]):null;
+ if(huella&&huella===fotoHuellaPintada){sync.textContent=texto;if(nCons)marcarFirma('fotos',['fotografias']);return;}
+ fotoHuellaPintada=huella;
  corteParaRanking=nCorte; fotoCons=nCons; FOTO_CORTE_DINAMICO=nDin; fotoCorteTs=nTs; fotoSinFotoN=nSin; fotos.alertasCarga=alertas;
  sync.textContent=texto;
  fotoPintar();
@@ -2250,7 +2257,7 @@ function fotoPintar(){
    $('#fkIdent').textContent=fmt(ident);
    $('#fkIdentD').textContent=`${pctTxt(ident,baseMarca)} del padrón · ${fmt(sinTot)} sin plantel identificado`;
    const rep=corteParaRanking?.con_plantel_identificado;
-   if(!mk&&rep!=null&&Number(rep)!==ident)alertas.push(['info',`El corte reporta ${fmt(rep)} personas con plantel identificado y la suma por plantel es ${fmt(ident)}. Se muestran las dos cifras sin ajustar ninguna.`]);
+   if(!mk&&rep!=null&&Number(rep)!==ident){const d=$('#fkIdentD');d.textContent+=` · el corte reporta ${fmt(rep)}`;d.title=`Suma por plantel: ${fmt(ident)} · cifra del corte: ${fmt(rep)}. Se muestran las dos sin ajustar.`;}
  } else {$('#fkIdent').textContent='—';$('#fkIdentD').textContent=fotoCons?'El corte no incluye desglose por plantel':'';}
  // Conciliación por marca: planteles + sin plantel contra el total oficial de la marca
  if(fotoCons&&C.conPlantelData){
@@ -2678,14 +2685,19 @@ const mrHomologar=v=>String(v??'').normalize('NFC').trim().replace(/\s+/g,' ').t
 // luego base de asistencia Salesforce como respaldo, siempre por matrícula exacta.
 async function mrEnriquecerPersonas(rows){
   const mats=[...new Set(rows.map(r=>mrNormalizarMat(r.matricula)).filter(Boolean))];
-  const pendientes=mats.filter(m=>!mrPersonaCache.has(m) || !mrPersonaCache.get(m).nombre || !mrPersonaCache.get(m).carrera);
+  // v7.5: una matrícula ya consultada no se vuelve a buscar aunque no tenga carrera (antes se repetía en cada lote).
+  const pendientes=mats.filter(m=>!mrPersonaCache.has(m) || (!mrPersonaCache.get(m).consultado && (!mrPersonaCache.get(m).nombre || !mrPersonaCache.get(m).carrera)));
   if(!pendientes.length)return rows.map(r=>{const p=mrPersonaCache.get(mrNormalizarMat(r.matricula))||{};return {...r,nombre:mrHomologar(mrDato(r.nombre)||p.nombre||''),carrera:mrHomologar(mrDato(r.carrera)||p.carrera||'')};});
   const trabajo=new Map(pendientes.map(m=>[m,{...(mrPersonaCache.get(m)||{}),nombre:mrPersonaCache.get(m)?.nombre||mrDato(rows.find(r=>mrNormalizarMat(r.matricula)===m)?.nombre)||'',carrera:mrPersonaCache.get(m)?.carrera||''}]));
   const errores=[];
-  for(let i=0;i<pendientes.length;i+=250){
-    const lote=pendientes.slice(i,i+250);
+  // v7.5: lotes de 250 en paralelo (máx. 3) y sin historial de pasos: para nombre y carrera no hace falta
+  // descargar todos los registros históricos de cada alumno, que era lo que hacía muy lenta la descarga.
+  const lotes=[];for(let i=0;i<pendientes.length;i+=250)lotes.push(pendientes.slice(i,i+250));
+  let hechos=0;
+  await enParalelo(lotes,3,async lote=>{
+    const i=hechos;
     try{
-      const {data,error}=await sb.rpc('fn_pasos_matricula',{p_matriculas:lote,p_fecha:null,p_historico:true});
+      const {data,error}=await sb.rpc('fn_pasos_matricula',{p_matriculas:lote,p_fecha:null,p_historico:false});
       if(error)throw error;
       const personas=Array.isArray(data)?data:(Array.isArray(data?.matriculas)?data.matriculas:[]);
       for(const r of personas){
@@ -2713,9 +2725,10 @@ async function mrEnriquecerPersonas(rows){
       }catch(err){errores.push('Vista PA: '+(err.message||err));break;}
     }
     // El nombre HikCentral ya llega en la misma fila desde Supabase; sin catálogo adicional.
-    $('#mrEstado').textContent=`Completando nombre y carrera: ${Math.min(i+250,pendientes.length)} de ${pendientes.length} matrículas…`;
-  }
-  for(const [m,p] of trabajo)if(p.nombre||p.carrera)mrPersonaCache.set(m,p);
+    hechos+=lote.length;
+    if(!window.__mrExportando)$('#mrEstado').textContent=`Completando nombre y carrera: ${Math.min(hechos,pendientes.length)} de ${pendientes.length} matrículas…`;
+  });
+  for(const [m,p] of trabajo)mrPersonaCache.set(m,{...p,consultado:true});
   if(errores.length)console.warn('Algunas fuentes no estuvieron disponibles:',[...new Set(errores)]);
   const incompletos=[...trabajo.values()].filter(p=>!p.nombre||!p.carrera).length;
   if(incompletos)console.info(`Hay ${incompletos} matrículas sin nombre o carrera después de las fuentes consultables. La RPC debe comprobarse para confirmar datos HikCentral / PA.`);
@@ -3416,11 +3429,12 @@ function v2Busqueda(mats, data){
     const estado=el('mrOpcEstado');estado.textContent='Cargando marca y plantel desde Asistencia…';
     try{
       const rows=await leerPeriodo();
+      if(el('mrTipo').value==='fotos')return;   // el usuario ya cambió a Personas sin fotografía
       options('mrMarca',unique(rows.map(r=>r.marca)),'Todas',true);
       const mar=el('mrMarca').value;
       options('mrPlantel',unique(rows.filter(r=>!mar||str(r.marca)===mar).map(r=>r.plantel)),'Todos los planteles',true);
       estado.textContent=rows.length.toLocaleString('es-MX')+' registros obtenidos de la misma fuente de General.';
-    }catch(e){estado.textContent='Error de consulta: '+(e.message||e);throw e}
+    }catch(e){if(el('mrTipo').value!=='fotos')estado.textContent='Error de consulta: '+(e.message||e);throw e}
   };
   const consultarAnterior=mrConsultar;
   mrConsultar=async function(){
@@ -3440,7 +3454,7 @@ function v2Busqueda(mats, data){
       el('mrPrev').disabled=mr.page===0;el('mrNext').disabled=(mr.page+1)>=pages;
       el('mrEstado').textContent=all.length.toLocaleString('es-MX')+' registros coincidentes · corte consultado '+horaCdmx(new Date());
       marcarFirma('reportes',['lecturas']);
-    }catch(e){el('mrEstado').textContent='Error: '+(e.message||e)}
+    }catch(e){if(run===mr.run)el('mrEstado').textContent='Error: '+(e.message||e)}
   };
   const descargarAnterior=mrDescargar;
   mrDescargar=async function(){
@@ -3469,7 +3483,12 @@ function v2Busqueda(mats, data){
   el('mrPrev').onclick=()=>{if(mr.page>0){mr.page--;mrConsultar()}};
   el('mrNext').onclick=()=>{mr.page++;mrConsultar()};
   el('mrTipo').onchange=async()=>{
-    mr.page=0;mr.keyM='';mr.keyP='';rpcCache.clear();
+    mr.page=0;mr.keyM='';mr.keyP='';rpcCache.clear();mr.run++;
+    // Sin restos de la consulta anterior: mensajes, encabezados y filas se reemplazan por el estado de carga.
+    el('mrOpcEstado').textContent='';el('mrEstado').innerHTML='<span class="spin"></span>Consultando…';
+    el('mrTabla').querySelector('thead').innerHTML='';
+    el('mrTabla').querySelector('tbody').innerHTML='<tr><td class="muted">Consultando…</td></tr>';
+    el('mrPagina').textContent='';el('mrPrev').disabled=true;el('mrNext').disabled=true;
     el('mrMarca').innerHTML='<option value="">Todas</option>';
     el('mrPlantel').innerHTML='<option value="">Todos los planteles</option>';
     await mrCargarOpciones();await mrConsultar();
@@ -3569,24 +3588,18 @@ function v2Busqueda(mats, data){
  };
  async function exportExcel(){
   if(busy)return;busy=true;const btn=$e('mrExcel');btn.disabled=true;
-  const status=$e('mrEstado');status.textContent='Recuperando registros para Excel…';
+  // v7.6: el botón y el mensaje dicen claramente que se está preparando la descarga (no una consulta).
+  const textoBtn=btn.textContent;btn.textContent='Descargando…';window.__mrExportando=true;
+  const status=$e('mrEstado');status.innerHTML='<span class="spin"></span>Descargando Excel…';
   try{
     let rows=await filtered();if(!rows.length)throw Error('No hay registros para exportar con esos filtros.');
     // El enriquecimiento es opcional: un fallo de búsqueda no debe bloquear la descarga.
     // Completar en lotes con plazo máximo; conservar datos crudos en caso de fallo.
-    const enriched=[];let incomplete=0;
-    for(let i=0;i<rows.length;i+=150){
-      const chunk=rows.slice(i,i+150);
-      status.textContent=`Consultando nombres y carreras: ${Math.min(i+150,rows.length)} de ${rows.length} registros…`;
-      try{
-        const result=await mrEnriquecerPersonas(chunk);
-        enriched.push(...result);
-      }catch(err){
-        console.warn('Enriquecimiento no disponible para este lote:',err);
-        enriched.push(...chunk);incomplete+=chunk.length;
-      }
-    }
-    rows=enriched;
+    // v7.7: el Excel baja directo con los datos de cada registro (y los nombres ya consultados en pantalla),
+    // sin consultas adicionales ni pasos de preparación.
+    const incomplete=0;
+    rows=rows.map(r=>{const c=mrPersonaCache.get(mrNormalizarMat(r.matricula))||{};
+      return {...r,nombre:mrHomologar(mrDato(r.nombre)||c.nombre||''),carrera:mrHomologar(mrDato(r.carrera)||c.carrera||'')};});
     const sinNombre=rows.filter(r=>!String(r.nombre||'').trim()).length;
     const keys=mrColumnas();if(tipo.value&&!keys.includes('tipo_alumno'))keys.push('tipo_alumno');
     const labels={matricula:'Matrícula',nombre:'Nombre completo',carrera:'Carrera',marca:'Marca',plantel:'Plantel de acceso',fecha:'Fecha',hora:'Hora',tipo_alumno:'Tipo de alumno',lecturas:'Lecturas'};
@@ -3599,13 +3612,13 @@ function v2Busqueda(mats, data){
       ['Parámetro','Valor'],['Información',$e('mrTipo').selectedOptions[0]?.textContent||''],
       ['Marca',$e('mrMarca').selectedOptions[0]?.textContent||'Todas'],['Plantel',$e('mrPlantel').selectedOptions[0]?.textContent||'Todos'],
       ['Tipo de alumno',tipo.selectedOptions[0]?.textContent||'Todos'],['Registros',rows.length],
-      ['Nombres sin identificar',sinNombre],['Datos incompletos',incomplete?`${incomplete} filas sin enriquecimiento por error de consulta`:'Datos disponibles según fuentes consultadas'],
+      ['Nombres sin identificar',sinNombre],['Nombre y carrera','Tal como vienen en la fuente y los ya consultados en pantalla'],
       ['Clasificación NI/RI','Presencia/ausencia en Asistencia 2026; no valida inscripción']
     ]),'Parámetros');
     XLSX.writeFile(wb,`Lottus_${$e('mrTipo').value}_${safename($e('mrPlantel').value||'todos')}_${hoyCDMX()}.xlsx`);
-    status.textContent=`Descarga preparada: ${rows.length.toLocaleString('es-MX')} registros · ${sinNombre} sin nombre${incomplete?' · errores en consulta':''}.`;
+    status.textContent=`Excel descargado: ${rows.length.toLocaleString('es-MX')} registros · ${sinNombre.toLocaleString('es-MX')} sin nombre en la fuente.`;
   }catch(e){status.textContent='No se pudo descargar Excel: '+(e.message||e);console.error(e)}
-  finally{busy=false;btn.disabled=false;}
+  finally{busy=false;btn.disabled=false;btn.textContent=textoBtn;window.__mrExportando=false;}
  }
  mrDescargar=exportExcel;
  // Handler final: evita que múltiples funciones previas sobrescriban la descarga.
@@ -3625,8 +3638,8 @@ function v2Busqueda(mats, data){
  const desde=document.getElementById('mrDesde'),hasta=document.getElementById('mrHasta');
  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Mexico_City',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  desde.value=desde.value||today;hasta.value=hasta.value||today;
- function show(){box.classList.toggle('hidden',p.value!=='personalizado');}
- p.addEventListener('change',show);show();
+ function show(){box.classList.toggle('hidden',p.value!=='personalizado'||document.getElementById('mrTipo').value==='fotos');}
+ p.addEventListener('change',show);document.getElementById('mrTipo').addEventListener('change',show);show();
  // Los botones existentes siguen ejecutando las funciones originales.
  [desde,hasta].forEach(el=>el.addEventListener('change',()=>{
   if(desde.value&&hasta.value&&desde.value>hasta.value){document.getElementById('mrEstado').textContent='La fecha inicial debe ser anterior a la final.';return;}
@@ -3686,10 +3699,41 @@ marcarFirma = function(tab, keys){
   v4Pintar(); v4GuardarPronto();
 };
 // Seguimiento de cargas en curso por pestaña, cualquiera que sea su origen (pestaña, filtro, recarga automática).
+/* Estabilidad visual durante las actualizaciones (todas las pestañas):
+   mientras una pestaña con datos se actualiza, conserva su altura y, al terminar, el bloque que el usuario
+   estaba leyendo vuelve a quedar en el mismo punto de la pantalla. Si el usuario se desplaza, se respeta. */
+const V4_FIJO = {};
+let v4UsuarioMovio = false;
+['wheel','touchstart','keydown','mousedown'].forEach(t => window.addEventListener(t, () => { v4UsuarioMovio = true; }, { passive:true, capture:true }));
+function v4Congelar(sec){
+  const el = document.getElementById('v-' + sec);
+  if (!el || vista !== sec || !V4.conDatos[sec] || V4_FIJO[sec]) return;
+  const alto = (document.getElementById('appHead')?.getBoundingClientRect().bottom || 0) + 12;
+  let ancla = document.elementFromPoint(Math.round(window.innerWidth / 2), Math.round(alto + 4));
+  // Ancla estable: el bloque de primer nivel de la pestaña (los módulos rehacen su contenido, no el bloque).
+  while (ancla && ancla.parentElement && ancla.parentElement !== el) ancla = ancla.parentElement;
+  if (!ancla || ancla.parentElement !== el) ancla = null;
+  V4_FIJO[sec] = { y: window.scrollY, ancla, top: ancla ? ancla.getBoundingClientRect().top : 0 };
+  v4UsuarioMovio = false;
+  el.style.minHeight = el.offsetHeight + 'px';
+}
+function v4Liberar(sec){
+  const f = V4_FIJO[sec]; if (!f) return;
+  delete V4_FIJO[sec];
+  const el = document.getElementById('v-' + sec);
+  const reponer = () => {
+    if (v4UsuarioMovio || vista !== sec) return;
+    if (f.ancla && f.ancla.isConnected) window.scrollBy(0, f.ancla.getBoundingClientRect().top - f.top);
+    else window.scrollTo(0, f.y);
+  };
+  requestAnimationFrame(() => { reponer(); if (el) el.style.minHeight = ''; requestAnimationFrame(reponer); });
+  setTimeout(reponer, 350);   // las gráficas terminan de ajustar su tamaño
+}
 function v4Seguir(sec, fn){
   return function(...a){
+    v4Congelar(sec);
     V4.activos[sec] = (V4.activos[sec] || 0) + 1; v4Pintar();
-    const fin = () => { V4.activos[sec] = Math.max(0, (V4.activos[sec] || 1) - 1); v4Pintar(); };
+    const fin = () => { V4.activos[sec] = Math.max(0, (V4.activos[sec] || 1) - 1); v4Pintar(); if (!V4.activos[sec]) v4Liberar(sec); };
     let p; try { p = fn.apply(this, a); } catch(e){ fin(); throw e; }
     Promise.resolve(p).catch(() => {}).finally(fin);
     return p;
@@ -3804,7 +3848,7 @@ function estadoRestaurar(){
       rangoGeneralDesde = (o.rango && o.rango[0]) || $('#genDesde').value || rangoGeneralDesde;
       rangoGeneralHasta = (o.rango && o.rango[1]) || $('#genHasta').value || '';
     }
-    document.getElementById('mrFechasCustom')?.classList.toggle('hidden', $('#mrPeriodo').value !== 'personalizado');
+    document.getElementById('mrFechasCustom')?.classList.toggle('hidden', $('#mrPeriodo').value !== 'personalizado' || $('#mrTipo').value === 'fotos');
     if ($('#pMat').value) pCuenta();
   } catch(e){ console.warn('No se pudieron restaurar los filtros:', e); }
   finally { v4Restaurando = false; }
@@ -4006,6 +4050,62 @@ function alcanceInstalar(){
   for (const id of ALC_MARCA_SEL){ const s = document.getElementById(id); if (s) alcDepurar(s); }
   for (const id of Object.keys(ALC_PLANTEL_SEL)){ const s = document.getElementById(id); if (s) alcDepurar(s); }
 }
+</script>
+<div id="avisoDescarga" class="aviso-descarga hidden" role="status" aria-live="polite"></div>
+<script>
+/* Descargas de Excel (todas las pestañas): mismo archivo de siempre, con dos respaldos.
+   1) Si el navegador bloquea la descarga automática, queda un enlace para bajarla con un clic.
+   2) Si la librería de Excel no cargó, se vuelve a cargar antes de generar el archivo. */
+(function(){
+  const caja = document.getElementById('avisoDescarga'); let tm = null, urlAnt = null;
+  const tam = n => n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+  window.avisoDescarga = function(html, ms){
+    caja.innerHTML = html + '<button type="button" class="ad-x" aria-label="Cerrar">×</button>';
+    caja.classList.remove('hidden'); caja.querySelector('.ad-x').onclick = () => caja.classList.add('hidden');
+    clearTimeout(tm); if (ms) tm = setTimeout(() => caja.classList.add('hidden'), ms);
+  };
+  function parchar(){
+    if (!window.XLSX || XLSX.__lottus) return;
+    const original = XLSX.writeFile;
+    XLSX.writeFile = function(wb, nombre, opts){
+      try {
+        const datos = XLSX.write(wb, Object.assign({ bookType:'xlsx', type:'array' }, opts || {}));
+        const blob = new Blob([datos], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        if (urlAnt) URL.revokeObjectURL(urlAnt);
+        const url = urlAnt = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
+        avisoDescarga(`<b>Archivo listo:</b> ${nombre.replace(/[<>&"]/g,'')} · ${tam(blob.size)}. <a href="${url}" download="${nombre.replace(/"/g,'')}">Si no se descargó, haz clic aquí</a>.`, 90000);
+      } catch(e){ return original.apply(this, arguments); }
+    };
+    XLSX.__lottus = true;
+  }
+  function cargarXLSX(){
+    return new Promise((ok, mal) => {
+      if (window.XLSX){ parchar(); return ok(); }
+      const sc = document.createElement('script');
+      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      sc.onload = () => { parchar(); ok(); }; sc.onerror = () => mal(Error('No se pudo cargar el componente de Excel.'));
+      document.head.appendChild(sc);
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => window.XLSX ? parchar() : cargarXLSX().catch(()=>{}));
+  else window.XLSX ? parchar() : cargarXLSX().catch(()=>{});
+  // Antes de cualquier botón de descarga: asegurar la librería (si faltaba, se carga y se repite el clic).
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('button');
+    if (!b || !/excel|xlsx|descargar/i.test((b.id || '') + ' ' + b.textContent) || window.XLSX) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    avisoDescarga('Preparando el componente de Excel…');
+    cargarXLSX().then(() => { caja.classList.add('hidden'); b.click(); })
+      .catch(err => avisoDescarga('<b>No se pudo descargar:</b> ' + err.message + ' Revisa tu conexión y recarga la página.'));
+  }, true);
+  // Errores de descarga de Reportes: también en el aviso, para que no pasen desapercibidos.
+  const est = document.getElementById('mrEstado');
+  if (est) new MutationObserver(() => {
+    const t = est.textContent || '';
+    if (/^No se pudo descargar/i.test(t)) avisoDescarga('<b>' + t.replace(/[<>&]/g,'') + '</b>', 30000);
+  }).observe(est, { childList:true, characterData:true, subtree:true });
+})();
 </script>
 </body>
 </html>
